@@ -4,8 +4,8 @@ import path from "path";
 import fs from "fs";
 import sharp from "sharp";
 import { getDb, rowToSighting, type SightingRow } from "@/lib/db";
-import { normaliseCity } from "@/lib/cities";
-import { normaliseSpecies, SPECIES_MAP, type UKSpecies } from "@/lib/species";
+import { UK_CITIES, normaliseCity } from "@/lib/cities";
+import { UK_SPECIES, normaliseSpecies, SPECIES_MAP, type UKSpecies } from "@/lib/species";
 import { ensureSynced } from "@/lib/sync";
 import { jsonError, handleRouteError } from "@/lib/errors";
 
@@ -37,24 +37,20 @@ export async function GET(request: NextRequest) {
     // Normalise query filters where provided
     const filterCity = rawCity ? normaliseCity(rawCity) : null;
     if (rawCity && !filterCity) {
-      // Specified city is not one of the 14 UK cities, so 0 matches
-      return NextResponse.json({
-        sightings: [],
-        data: [],
-        stale: syncStatus.stale,
-        total: 0,
-      });
+      return jsonError(
+        "INVALID_PARAMETER",
+        `Unknown city '${rawCity}'. Valid cities are: ${UK_CITIES.join(", ")}`,
+        400
+      );
     }
 
     const filterSpecies = rawSpecies ? normaliseSpecies(rawSpecies) : null;
     if (rawSpecies && !filterSpecies) {
-      // Specified species is not recognized, so 0 matches
-      return NextResponse.json({
-        sightings: [],
-        data: [],
-        stale: syncStatus.stale,
-        total: 0,
-      });
+      return jsonError(
+        "INVALID_PARAMETER",
+        `Unknown species '${rawSpecies}'. Valid species are: ${UK_SPECIES.join(", ")}`,
+        400
+      );
     }
 
     let filterSource: "elanco" | "community" | null = null;
@@ -73,14 +69,12 @@ export async function GET(request: NextRequest) {
     const params: Record<string, unknown> = {};
 
     if (fromParam) {
-      // If date is YYYY-MM-DD, parse as start of day UTC
       const fromDate = fromParam.length === 10 ? `${fromParam}T00:00:00.000Z` : fromParam;
       sql += " AND date >= @fromDate";
       params.fromDate = fromDate;
     }
 
     if (toParam) {
-      // If date is YYYY-MM-DD, parse as end of day UTC
       const toDate = toParam.length === 10 ? `${toParam}T23:59:59.999Z` : toParam;
       sql += " AND date <= @toDate";
       params.toDate = toDate;
@@ -114,7 +108,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       {
         sightings,
-        data: sightings,
         stale: syncStatus.stale,
         total: sightings.length,
       },
@@ -292,7 +285,6 @@ export async function POST(request: NextRequest) {
       id: newId,
       date: isoDate,
       city: validCity,
-      location: validCity,
       species: validSpecies,
       latinName: mappedLatinName,
       source: "community" as const,

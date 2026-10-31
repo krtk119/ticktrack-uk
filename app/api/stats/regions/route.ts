@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { UK_CITIES, CITY_COORDINATES, type UKCity } from "@/lib/cities";
-import { normaliseSpecies } from "@/lib/species";
+import { UK_SPECIES, normaliseSpecies } from "@/lib/species";
 import { ensureSynced } from "@/lib/sync";
-import { handleRouteError } from "@/lib/errors";
+import { jsonError, handleRouteError } from "@/lib/errors";
 
 export const dynamic = "force-dynamic";
 
@@ -19,19 +19,11 @@ export async function GET(request: NextRequest) {
 
     const filterSpecies = rawSpecies ? normaliseSpecies(rawSpecies) : null;
     if (rawSpecies && !filterSpecies) {
-      // Unrecognized species: return all cities with 0 count
-      const emptyRegions = UK_CITIES.map((cityName) => ({
-        city: cityName,
-        latitude: CITY_COORDINATES[cityName as UKCity].latitude,
-        longitude: CITY_COORDINATES[cityName as UKCity].longitude,
-        count: 0,
-      }));
-      return NextResponse.json({
-        regions: emptyRegions,
-        data: emptyRegions,
-        total: 0,
-        stale: syncStatus.stale,
-      });
+      return jsonError(
+        "INVALID_PARAMETER",
+        `Unknown species '${rawSpecies}'. Valid species are: ${UK_SPECIES.join(", ")}`,
+        400
+      );
     }
 
     let sql = `
@@ -89,7 +81,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       {
         regions,
-        data: regions,
         total,
         stale: syncStatus.stale,
       },

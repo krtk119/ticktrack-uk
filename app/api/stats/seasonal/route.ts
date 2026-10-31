@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
-import { normaliseCity } from "@/lib/cities";
+import { UK_CITIES, normaliseCity } from "@/lib/cities";
 import { ensureSynced } from "@/lib/sync";
-import { handleRouteError } from "@/lib/errors";
+import { jsonError, handleRouteError } from "@/lib/errors";
 
 export const dynamic = "force-dynamic";
 
@@ -31,19 +31,11 @@ export async function GET(request: NextRequest) {
 
     const filterCity = rawCity ? normaliseCity(rawCity) : null;
     if (rawCity && !filterCity) {
-      // Unrecognized city: return zero counts for all 12 months
-      const zeroMonths = MONTH_NAMES.map((name, idx) => ({
-        month: name,
-        monthNumber: idx + 1,
-        count: 0,
-      }));
-      return NextResponse.json({
-        city: null,
-        seasonal: zeroMonths,
-        data: zeroMonths,
-        total: 0,
-        stale: syncStatus.stale,
-      });
+      return jsonError(
+        "INVALID_PARAMETER",
+        `Unknown city '${rawCity}'. Valid cities are: ${UK_CITIES.join(", ")}`,
+        400
+      );
     }
 
     let sql = `
@@ -89,8 +81,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       {
         city: filterCity,
-        seasonal,
-        data: seasonal,
+        months: seasonal,
         total,
         stale: syncStatus.stale,
       },

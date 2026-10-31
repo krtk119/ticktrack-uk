@@ -19,7 +19,6 @@ export interface Sighting {
   id: string;
   date: string;
   city: string;
-  location: string;
   species: string;
   latinName: string;
   source: "elanco" | "community";
@@ -33,7 +32,6 @@ export function rowToSighting(row: SightingRow): Sighting {
     id: row.id,
     date: row.date,
     city: row.city,
-    location: row.city,
     species: row.species,
     latinName: row.latinName,
     source: row.source,
