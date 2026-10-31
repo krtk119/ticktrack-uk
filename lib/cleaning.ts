@@ -3,38 +3,24 @@ import { UK_CITIES, normaliseCity, type UKCity } from "./cities";
 import { SPECIES_MAP, normaliseSpecies, type UKSpecies } from "./species";
 
 /**
- * Zod schema for a raw sighting record from the upstream API or raw input.
+ * Zod schema for a raw sighting record from the upstream API.
+ * The Elanco API only provides `location`, not `city`.
  */
-export const rawRecordSchema = z
-  .object({
-    id: z.unknown(),
-    date: z.unknown(),
-    location: z.unknown().optional(),
-    city: z.unknown().optional(),
-    species: z.unknown(),
-    latinName: z.unknown().optional(),
-  })
-  .refine(
-    (data) => {
-      // Must contain non-empty id, date, species, and either location or city
-      const hasId = typeof data.id === "string" && data.id.trim().length > 0;
-      const hasDate = typeof data.date === "string" && data.date.trim().length > 0;
-      const hasSpecies = typeof data.species === "string" && data.species.trim().length > 0;
-      const loc = typeof data.location === "string" ? data.location.trim() : "";
-      const ct = typeof data.city === "string" ? data.city.trim() : "";
-      const hasLoc = loc.length > 0 || ct.length > 0;
-      return hasId && hasDate && hasSpecies && hasLoc;
-    },
-    { message: "Missing required sighting fields" }
-  );
+export const rawRecordSchema = z.object({
+  id: z.string().trim().min(1, "id is required"),
+  date: z.string().trim().min(1, "date is required"),
+  location: z.string().trim().min(1, "location is required"),
+  species: z.string().trim().min(1, "species is required"),
+  latinName: z.string().trim().optional(),
+});
 
 export type RawRecord = z.infer<typeof rawRecordSchema>;
 
 export interface CleanSighting {
   id: string;
   date: string;
-  city: UKCity;
   location: UKCity;
+  city: UKCity;
   species: UKSpecies;
   latinName: string;
 }
@@ -43,10 +29,12 @@ export interface CleaningReport {
   total: number;
   kept: number;
   duplicatesRemoved: number;
-  invalidRemoved: number;
-  // Snake_case aliases for compatibility
-  duplicates_removed: number;
-  invalid_removed: number;
+  missingFields: number;
+  invalidDate: number;
+  futureDate: number;
+  unknownCity: number;
+  unknownSpecies: number;
+  latinNameMismatch: number;
 }
 
 export interface CleanSightingsResult {
@@ -62,11 +50,12 @@ export interface CleanSightingsOptions {
 /**
  * Cleans an array of raw sightings:
  * - Trims strings
- * - Normalises city names against the 14 UK cities
+ * - Normalises city names against the 14 UK cities (API provides `location`)
  * - Normalises species against the 5 UK species
- * - Validates and parses dates (rejecting unparseable, malformed, or future dates)
- * - Rejects records missing required fields
- * - Deduplicates by id and by identical date + city + species
+ * - Parses dates explicitly as UTC, rejecting invalid, malformed, or future dates
+ * - Tracks invalid records with a detailed breakdown (missingFields, invalidDate, futureDate, unknownCity, unknownSpecies)
+ * - Keeps records with mismatched latinName and sets canonical mapped Latin name, counting latinNameMismatch
+ * - Deduplicates by id and by identical date + location + species
  */
 export function cleanSightings(
   raw: unknown,
@@ -79,9 +68,12 @@ export function cleanSightings(
         total: 0,
         kept: 0,
         duplicatesRemoved: 0,
-        invalidRemoved: 0,
-        duplicates_removed: 0,
-        invalid_removed: 0,
+        missingFields: 0,
+        invalidDate: 0,
+        futureDate: 0,
+        unknownCity: 0,
+        unknownSpecies: 0,
+        latinNameMismatch: 0,
       },
     };
   }
@@ -92,110 +84,122 @@ export function cleanSightings(
   const seenSignatures = new Set<string>();
 
   let duplicatesRemoved = 0;
-  let invalidRemoved = 0;
+  let missingFields = 0;
+  let invalidDate = 0;
+  let futureDate = 0;
+  let unknownCity = 0;
+  let unknownSpecies = 0;
+  let latinNameMismatch = 0;
 
   for (const item of raw) {
     if (!item || typeof item !== "object") {
-      invalidRemoved++;
+      missingFields++;
       continue;
     }
 
     const rec = item as Record<string, unknown>;
 
-    // 1. Validate & trim ID
-    if (typeof rec.id !== "string" || rec.id.trim().length === 0) {
-      invalidRemoved++;
+    // 1. Required field existence check
+    const rawId = typeof rec.id === "string" ? rec.id.trim() : "";
+    const rawLocation = typeof rec.location === "string" ? rec.location.trim() : "";
+    const rawSpecies = typeof rec.species === "string" ? rec.species.trim() : "";
+    const rawDate = typeof rec.date === "string" ? rec.date.trim() : "";
+
+    if (!rawId || !rawLocation || !rawSpecies || !rawDate) {
+      missingFields++;
       continue;
     }
-    const cleanId = rec.id.trim();
 
-    // 2. Validate & normalise City
-    const rawLoc =
-      typeof rec.location === "string"
-        ? rec.location
-        : typeof rec.city === "string"
-        ? rec.city
-        : null;
-
-    if (!rawLoc || rawLoc.trim().length === 0) {
-      invalidRemoved++;
-      continue;
-    }
-    const cleanCity = normaliseCity(rawLoc);
+    // 2. City validation & normalisation (API provides location)
+    const cleanCity = normaliseCity(rawLocation);
     if (!cleanCity) {
-      invalidRemoved++;
+      unknownCity++;
       continue;
     }
 
-    // 3. Validate & normalise Species
-    if (typeof rec.species !== "string" || rec.species.trim().length === 0) {
-      invalidRemoved++;
-      continue;
-    }
-    const cleanSpecies = normaliseSpecies(rec.species);
+    // 3. Species validation & normalisation
+    const cleanSpecies = normaliseSpecies(rawSpecies);
     if (!cleanSpecies) {
-      invalidRemoved++;
+      unknownSpecies++;
       continue;
     }
 
-    // Determine Latin name: use canonical mapping if missing or custom
-    const cleanLatinName =
-      typeof rec.latinName === "string" && rec.latinName.trim().length > 0
-        ? rec.latinName.trim()
-        : SPECIES_MAP[cleanSpecies];
-
-    // 4. Validate & parse Date
-    if (typeof rec.date !== "string" || rec.date.trim().length === 0) {
-      invalidRemoved++;
-      continue;
-    }
-    const trimmedDate = rec.date.trim();
-
-    // Attach UTC 'Z' if missing timezone indicator to ensure timezone-invariant parsing
-    const hasTz = trimmedDate.endsWith("Z") || /[+-]\d{2}:?\d{2}$/.test(trimmedDate);
-    const dateToParse = hasTz ? trimmedDate : `${trimmedDate}Z`;
+    // 4. Date validation & UTC parsing
+    // Attach 'Z' if missing timezone indicator to ensure timezone-invariant UTC parsing
+    const hasTz = rawDate.endsWith("Z") || /[+-]\d{2}:?\d{2}$/.test(rawDate);
+    const dateToParse = hasTz ? rawDate : `${rawDate}Z`;
     const parsedDate = new Date(dateToParse);
 
     if (isNaN(parsedDate.getTime())) {
-      invalidRemoved++;
+      invalidDate++;
       continue;
     }
 
-    // Check future date
+    // Calendar rollover check (e.g. 2022-02-31 rolls into March in JS Date)
+    const dateParts = rawDate.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (dateParts) {
+      const year = parseInt(dateParts[1], 10);
+      const month = parseInt(dateParts[2], 10);
+      const day = parseInt(dateParts[3], 10);
+      if (
+        parsedDate.getUTCFullYear() !== year ||
+        parsedDate.getUTCMonth() + 1 !== month ||
+        parsedDate.getUTCDate() !== day
+      ) {
+        invalidDate++;
+        continue;
+      }
+    }
+
+    // Future date check
     if (parsedDate.getTime() > nowTimestamp) {
-      invalidRemoved++;
+      futureDate++;
       continue;
     }
 
-    // Format consistent ISO string
     const isoDate = parsedDate.toISOString();
 
     // 5. Deduplication
-    // Check duplicate by ID
-    if (seenIds.has(cleanId)) {
+    if (seenIds.has(rawId)) {
       duplicatesRemoved++;
       continue;
     }
 
-    // Check duplicate by identical date + city + species
     const signature = `${isoDate}|${cleanCity}|${cleanSpecies}`;
     if (seenSignatures.has(signature)) {
       duplicatesRemoved++;
       continue;
     }
 
-    // Record is clean and unique
-    seenIds.add(cleanId);
+    // 6. Latin name check
+    // If latinName doesn't match our species map, keep the record with our mapped Latin name
+    // and count it as latinNameMismatch.
+    const mappedLatin = SPECIES_MAP[cleanSpecies];
+    const rawLatin = typeof rec.latinName === "string" ? rec.latinName.trim() : "";
+    if (rawLatin !== mappedLatin) {
+      latinNameMismatch++;
+    }
+
+    // Record is valid and unique
+    seenIds.add(rawId);
     seenSignatures.add(signature);
 
     clean.push({
-      id: cleanId,
+      id: rawId,
       date: isoDate,
-      city: cleanCity,
       location: cleanCity,
+      city: cleanCity,
       species: cleanSpecies,
-      latinName: cleanLatinName,
+      latinName: mappedLatin,
     });
+  }
+
+  // Log warnings when unknown city or unknown species records are found
+  if (unknownCity > 0) {
+    console.warn(`[cleanSightings] Warning: ${unknownCity} record(s) rejected due to unknown city`);
+  }
+  if (unknownSpecies > 0) {
+    console.warn(`[cleanSightings] Warning: ${unknownSpecies} record(s) rejected due to unknown species`);
   }
 
   return {
@@ -204,9 +208,12 @@ export function cleanSightings(
       total: raw.length,
       kept: clean.length,
       duplicatesRemoved,
-      invalidRemoved,
-      duplicates_removed: duplicatesRemoved,
-      invalid_removed: invalidRemoved,
+      missingFields,
+      invalidDate,
+      futureDate,
+      unknownCity,
+      unknownSpecies,
+      latinNameMismatch,
     },
   };
 }
