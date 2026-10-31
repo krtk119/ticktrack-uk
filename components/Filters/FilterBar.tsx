@@ -4,12 +4,9 @@ import { UK_SPECIES } from "@/lib/species";
 import { SPECIES_THEMES } from "@/lib/species-theme";
 import { Filter, RotateCcw } from "lucide-react";
 
-export interface FilterState {
-  from: string;
-  to: string;
-  species: string;
-  source: string;
-}
+import type { MapFilters } from "@/lib/types";
+
+export type FilterState = MapFilters;
 
 interface FilterBarProps {
   filters: FilterState;
