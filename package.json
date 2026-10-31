@@ -10,13 +10,16 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "better-sqlite3": "^13.0.3",
     "next": "16.2.12",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "sharp": "^0.35.5",
     "zod": "^4.6.7"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^24.19.2",
     "@types/react": "^19",
     "@types/react-dom": "^19",
@@ -27,6 +30,7 @@
     "vitest": "^5.0.5"
   },
   "allowScripts": {
-    "sharp@0.34.5": true
+    "sharp@0.34.5": true,
+    "better-sqlite3@13.0.3": true
   }
 }
