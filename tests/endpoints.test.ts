@@ -370,6 +370,28 @@ describe("Phase 3: Route Handlers Endpoints", () => {
       expect(speciesJson.error.message).toContain("Unknown species 'Alien tick'");
     });
 
+    it("filters trends by source so the city timeline matches the map filters", async () => {
+      seedTestData();
+
+      const req = new NextRequest("http://localhost:3000/api/stats/trends?interval=month&source=community");
+      const res = await getTrends(req);
+      expect(res.status).toBe(200);
+      const json = await res.json();
+
+      // Community records are s_2 (2023-05) and s_4 (2023-08)
+      expect(json.total).toBe(2);
+      expect(json.trends).toEqual([
+        { period: "2023-05", count: 1 },
+        { period: "2023-06", count: 0 },
+        { period: "2023-07", count: 0 },
+        { period: "2023-08", count: 1 },
+      ]);
+
+      const badReq = new NextRequest("http://localhost:3000/api/stats/trends?source=other");
+      const badRes = await getTrends(badReq);
+      expect(badRes.status).toBe(400);
+    });
+
     it("returns 400 for invalid interval parameter", async () => {
       seedTestData();
 

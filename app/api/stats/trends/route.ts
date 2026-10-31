@@ -18,6 +18,7 @@ export async function GET(request: NextRequest) {
     const toParam = searchParams.get("to")?.trim() || null;
     const rawCity = searchParams.get("city")?.trim() || null;
     const rawSpecies = searchParams.get("species")?.trim() || null;
+    const rawSource = searchParams.get("source")?.trim()?.toLowerCase() || null;
 
     if (rawInterval !== "week" && rawInterval !== "month") {
       return jsonError("INVALID_PARAMETER", "interval must be 'week' or 'month'");
@@ -39,6 +40,15 @@ export async function GET(request: NextRequest) {
         `Unknown species '${rawSpecies}'. Valid species are: ${UK_SPECIES.join(", ")}`,
         400
       );
+    }
+
+    // Same source filter as /api/sightings and /api/stats/regions, so the map's
+    // filters apply consistently to the city timeline.
+    let filterSource: "elanco" | "community" | null = null;
+    if (rawSource === "elanco" || rawSource === "community") {
+      filterSource = rawSource;
+    } else if (rawSource) {
+      return jsonError("INVALID_PARAMETER", "source must be 'elanco' or 'community'");
     }
 
     // Determine period expression in SQLite: month (%Y-%m) or week (%Y-W%W)
@@ -78,6 +88,11 @@ export async function GET(request: NextRequest) {
       params.filterSpecies = filterSpecies;
     }
 
+    if (filterSource) {
+      sql += " AND source = @filterSource";
+      params.filterSource = filterSource;
+    }
+
     sql += " GROUP BY period ORDER BY period ASC";
 
     const rows = db.prepare(sql).all(params) as Array<{ period: string; count: number }>;
@@ -108,6 +123,10 @@ export async function GET(request: NextRequest) {
       if (filterSpecies) {
         boundSql += " AND species = @species";
         boundParams.species = filterSpecies;
+      }
+      if (filterSource) {
+        boundSql += " AND source = @source";
+        boundParams.source = filterSource;
       }
 
       const boundRow = db.prepare(boundSql).get(boundParams) as
