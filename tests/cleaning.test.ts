@@ -16,6 +16,10 @@ describe("Raw Record Schema", () => {
 
     const parsed = rawRecordSchema.safeParse(raw);
     expect(parsed.success).toBe(true);
+    if (parsed.success) {
+      expect(parsed.data.id).toBe("rec_123");
+      expect(parsed.data.location).toBe("London");
+    }
   });
 
   it("rejects record missing location", () => {
@@ -60,9 +64,10 @@ describe("Raw Record Schema", () => {
 });
 
 describe("cleanSightings UTC Date Parsing", () => {
-  const fixedNow = new Date("2024-01-01T00:00:00.000Z");
+  const fixedNow = new Date("2024-06-01T00:00:00.000Z");
 
   it("parses dates explicitly as UTC so 2022-08-01T00:30:00 stays on 1 August regardless of local timezone", () => {
+    // Under Europe/London (BST = UTC+1 in August), a local parse of 00:30:00 would roll back to 31 July 23:30 UTC
     const raw = [
       {
         id: "utc_test_1",
@@ -82,6 +87,87 @@ describe("cleanSightings UTC Date Parsing", () => {
     expect(parsedUtc.getUTCFullYear()).toBe(2022);
     expect(parsedUtc.getUTCMonth()).toBe(7); // August (0-indexed)
     expect(parsedUtc.getUTCDate()).toBe(1); // 1st August
+  });
+
+  it("accepts date-only strings like 2024-05-01 and treats them as midnight UTC", () => {
+    const raw = [
+      {
+        id: "date_only_1",
+        date: "2024-05-01",
+        location: "Edinburgh",
+        species: "Passerine tick",
+      },
+    ];
+
+    const { clean, report } = cleanSightings(raw, { now: fixedNow });
+
+    expect(report.kept).toBe(1);
+    expect(clean[0].date).toBe("2024-05-01T00:00:00.000Z");
+
+    const parsedUtc = new Date(clean[0].date);
+    expect(parsedUtc.getUTCFullYear()).toBe(2024);
+    expect(parsedUtc.getUTCMonth()).toBe(4); // May
+    expect(parsedUtc.getUTCDate()).toBe(1);
+  });
+});
+
+describe("cleanSightings Trimming, Case Normalisation & Field Integrity", () => {
+  const fixedNow = new Date("2024-06-01T00:00:00.000Z");
+
+  it("trims strings and normalises casing for ' london ' -> 'London' and ' marsh TICK ' -> 'Marsh tick'", () => {
+    const raw = [
+      {
+        id: "  id_spaced  ",
+        date: "  2023-04-15T10:30:00  ",
+        location: " london ",
+        species: " marsh TICK ",
+        latinName: "  Ixodes apronophorus  ",
+      },
+    ];
+
+    const { clean, report } = cleanSightings(raw, { now: fixedNow });
+
+    expect(report.kept).toBe(1);
+    expect(clean[0].city).toBe("London");
+    expect(clean[0].species).toBe("Marsh tick");
+    expect(clean[0].latinName).toBe("Ixodes apronophorus");
+  });
+
+  it("ensures a fully valid record comes out with every field correct and clean report", () => {
+    const raw = [
+      {
+        id: "rec_perfect_1",
+        date: "2023-06-15T10:30:00",
+        location: "Manchester",
+        species: "Passerine tick",
+        latinName: "Dermacentor frontalis",
+      },
+    ];
+
+    const { clean, report } = cleanSightings(raw, { now: fixedNow });
+
+    expect(report).toEqual({
+      total: 1,
+      kept: 1,
+      duplicatesRemoved: 0,
+      missingFields: 0,
+      invalidDate: 0,
+      futureDate: 0,
+      unknownCity: 0,
+      unknownSpecies: 0,
+      latinNameMismatch: 0,
+    });
+
+    expect(clean[0]).toEqual({
+      id: "rec_perfect_1",
+      date: "2023-06-15T10:30:00.000Z",
+      city: "Manchester",
+      species: "Passerine tick",
+      latinName: "Dermacentor frontalis",
+    });
+
+    // Verify duplicate location field is removed from CleanSighting
+    expect("location" in clean[0]).toBe(false);
   });
 });
 
@@ -229,23 +315,7 @@ describe("cleanSightings Breakdown & Validation", () => {
     expect(clean[2].latinName).toBe("Dermacentor frontalis");
   });
 
-  it("does not include snake_case aliases in report", () => {
-    const raw = [
-      {
-        id: "rec_clean",
-        date: "2023-01-01T00:00:00",
-        location: "London",
-        species: "Marsh tick",
-      },
-    ];
-
-    const { report } = cleanSightings(raw, { now: fixedNow });
-
-    expect("duplicates_removed" in report).toBe(false);
-    expect("invalid_removed" in report).toBe(false);
-  });
-
-  it("deduplicates records with duplicate id or identical date + location + species", () => {
+  it("deduplicates records with duplicate id or identical date + city + species", () => {
     const raw = [
       {
         id: "dup_id",
@@ -266,7 +336,7 @@ describe("cleanSightings Breakdown & Validation", () => {
         species: "Passerine tick",
       },
       {
-        id: "dup_sig_2", // different ID, identical date + location + species
+        id: "dup_sig_2", // different ID, identical date + city + species
         date: "2023-03-01T12:00:00",
         location: "Liverpool",
         species: "Passerine tick",

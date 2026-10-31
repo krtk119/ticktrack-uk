@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { UK_CITIES, normaliseCity, type UKCity } from "./cities";
+import { normaliseCity, type UKCity } from "./cities";
 import { SPECIES_MAP, normaliseSpecies, type UKSpecies } from "./species";
 
 /**
@@ -19,7 +19,6 @@ export type RawRecord = z.infer<typeof rawRecordSchema>;
 export interface CleanSighting {
   id: string;
   date: string;
-  location: UKCity;
   city: UKCity;
   species: UKSpecies;
   latinName: string;
@@ -49,13 +48,13 @@ export interface CleanSightingsOptions {
 
 /**
  * Cleans an array of raw sightings:
- * - Trims strings
- * - Normalises city names against the 14 UK cities (API provides `location`)
- * - Normalises species against the 5 UK species
- * - Parses dates explicitly as UTC, rejecting invalid, malformed, or future dates
- * - Tracks invalid records with a detailed breakdown (missingFields, invalidDate, futureDate, unknownCity, unknownSpecies)
+ * - Validates schema with Zod rawRecordSchema (failures count as missingFields)
+ * - Trims strings and normalises canonical city and species names
+ * - Parses dates explicitly as UTC (including date-only strings as midnight UTC)
+ * - Rejects invalid, malformed, or future dates
+ * - Tracks invalid records with a detailed breakdown
  * - Keeps records with mismatched latinName and sets canonical mapped Latin name, counting latinNameMismatch
- * - Deduplicates by id and by identical date + location + species
+ * - Deduplicates by id and by identical date + city + species
  */
 export function cleanSightings(
   raw: unknown,
@@ -92,42 +91,39 @@ export function cleanSightings(
   let latinNameMismatch = 0;
 
   for (const item of raw) {
-    if (!item || typeof item !== "object") {
+    // 1. Validate required fields using rawRecordSchema
+    const parseResult = rawRecordSchema.safeParse(item);
+    if (!parseResult.success) {
       missingFields++;
       continue;
     }
 
-    const rec = item as Record<string, unknown>;
-
-    // 1. Required field existence check
-    const rawId = typeof rec.id === "string" ? rec.id.trim() : "";
-    const rawLocation = typeof rec.location === "string" ? rec.location.trim() : "";
-    const rawSpecies = typeof rec.species === "string" ? rec.species.trim() : "";
-    const rawDate = typeof rec.date === "string" ? rec.date.trim() : "";
-
-    if (!rawId || !rawLocation || !rawSpecies || !rawDate) {
-      missingFields++;
-      continue;
-    }
+    const rec = parseResult.data;
 
     // 2. City validation & normalisation (API provides location)
-    const cleanCity = normaliseCity(rawLocation);
+    const cleanCity = normaliseCity(rec.location);
     if (!cleanCity) {
       unknownCity++;
       continue;
     }
 
     // 3. Species validation & normalisation
-    const cleanSpecies = normaliseSpecies(rawSpecies);
+    const cleanSpecies = normaliseSpecies(rec.species);
     if (!cleanSpecies) {
       unknownSpecies++;
       continue;
     }
 
     // 4. Date validation & UTC parsing
-    // Attach 'Z' if missing timezone indicator to ensure timezone-invariant UTC parsing
-    const hasTz = rawDate.endsWith("Z") || /[+-]\d{2}:?\d{2}$/.test(rawDate);
-    const dateToParse = hasTz ? rawDate : `${rawDate}Z`;
+    // Accept date-only strings like "2024-05-01" as midnight UTC ("2024-05-01T00:00:00.000Z")
+    let dateToParse: string;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(rec.date)) {
+      dateToParse = `${rec.date}T00:00:00.000Z`;
+    } else {
+      const hasTz = rec.date.endsWith("Z") || /[+-]\d{2}:?\d{2}$/.test(rec.date);
+      dateToParse = hasTz ? rec.date : `${rec.date}Z`;
+    }
+
     const parsedDate = new Date(dateToParse);
 
     if (isNaN(parsedDate.getTime())) {
@@ -136,7 +132,7 @@ export function cleanSightings(
     }
 
     // Calendar rollover check (e.g. 2022-02-31 rolls into March in JS Date)
-    const dateParts = rawDate.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    const dateParts = rec.date.match(/^(\d{4})-(\d{2})-(\d{2})/);
     if (dateParts) {
       const year = parseInt(dateParts[1], 10);
       const month = parseInt(dateParts[2], 10);
@@ -160,7 +156,7 @@ export function cleanSightings(
     const isoDate = parsedDate.toISOString();
 
     // 5. Deduplication
-    if (seenIds.has(rawId)) {
+    if (seenIds.has(rec.id)) {
       duplicatesRemoved++;
       continue;
     }
@@ -175,19 +171,18 @@ export function cleanSightings(
     // If latinName doesn't match our species map, keep the record with our mapped Latin name
     // and count it as latinNameMismatch.
     const mappedLatin = SPECIES_MAP[cleanSpecies];
-    const rawLatin = typeof rec.latinName === "string" ? rec.latinName.trim() : "";
+    const rawLatin = rec.latinName || "";
     if (rawLatin !== mappedLatin) {
       latinNameMismatch++;
     }
 
     // Record is valid and unique
-    seenIds.add(rawId);
+    seenIds.add(rec.id);
     seenSignatures.add(signature);
 
     clean.push({
-      id: rawId,
+      id: rec.id,
       date: isoDate,
-      location: cleanCity,
       city: cleanCity,
       species: cleanSpecies,
       latinName: mappedLatin,
