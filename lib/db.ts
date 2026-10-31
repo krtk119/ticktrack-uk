@@ -81,21 +81,42 @@ export function initSchema(db: Database.Database): void {
 }
 
 /**
+ * Sets the active database instance (primarily for test isolation).
+ */
+export function setDb(db: Database.Database | null): void {
+  if (dbInstance && dbInstance !== db) {
+    dbInstance.close();
+  }
+  dbInstance = db;
+}
+
+/**
  * Returns the singleton SQLite database instance.
+ * Automatically uses in-memory SQLite in test environments to prevent touching data/ticks.db.
  */
 export function getDb(customPath?: string): Database.Database {
   if (customPath) {
-    const customDb = new Database(customPath);
-    initSchema(customDb);
-    return customDb;
+    if (dbInstance) {
+      dbInstance.close();
+    }
+    dbInstance = new Database(customPath);
+    initSchema(dbInstance);
+    return dbInstance;
   }
 
   if (!dbInstance) {
-    const dataDir = path.join(process.cwd(), "data");
-    if (!fs.existsSync(dataDir)) {
-      fs.mkdirSync(dataDir, { recursive: true });
+    const isTest = process.env.NODE_ENV === "test" || process.env.VITEST === "true";
+    const dbPath =
+      process.env.TEST_DB_PATH ||
+      (isTest ? ":memory:" : path.join(process.cwd(), "data", "ticks.db"));
+
+    if (dbPath !== ":memory:") {
+      const dataDir = path.dirname(dbPath);
+      if (!fs.existsSync(dataDir)) {
+        fs.mkdirSync(dataDir, { recursive: true });
+      }
     }
-    const dbPath = path.join(dataDir, "ticks.db");
+
     dbInstance = new Database(dbPath);
     initSchema(dbInstance);
   }
