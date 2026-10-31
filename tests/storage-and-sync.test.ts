@@ -216,6 +216,56 @@ describe("Phase 2: Sync and Cache Lifecycle", () => {
     );
   });
 
+  it("deletes old elanco records removed upstream while strictly preserving community rows", async () => {
+    // 1. Seed with an old elanco sighting and a community sighting
+    db.prepare(`
+      INSERT INTO sightings (id, date, city, species, latinName, source, verified, notes)
+      VALUES 
+        ('elanco_stale', '2023-01-01T00:00:00.000Z', 'London', 'Marsh tick', 'Ixodes apronophorus', 'elanco', 1, NULL),
+        ('community_user_1', '2023-03-01T10:00:00.000Z', 'Bristol', 'Passerine tick', 'Dermacentor frontalis', 'community', 0, 'User submission')
+    `).run();
+
+    // 2. Mock upstream response containing a brand new record (elanco_stale is absent)
+    const freshSightings = [
+      {
+        id: "elanco_fresh_1",
+        date: "2023-06-01T12:00:00",
+        location: "Manchester",
+        species: "Tree-hole tick",
+      },
+    ];
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation(async (url: string) => {
+        if (url.includes("/tick-sightings")) {
+          return { ok: true, json: async () => freshSightings };
+        }
+        if (url.includes("/stats")) {
+          return { ok: true, json: async () => ({ api_version: "1.0.0", total_sightings: 1 }) };
+        }
+        return { ok: false, status: 404 };
+      })
+    );
+
+    await syncFromUpstream(db, "https://mock-api.local");
+
+    // 3. Verify: elanco_stale is deleted, elanco_fresh_1 is added, community_user_1 is preserved
+    const allRows = db.prepare("SELECT * FROM sightings ORDER BY id ASC").all() as SightingRow[];
+    expect(allRows.length).toBe(2);
+
+    const ids = allRows.map((r) => r.id);
+    expect(ids).toContain("community_user_1");
+    expect(ids).toContain("elanco_fresh_1");
+    expect(ids).not.toContain("elanco_stale");
+
+    // Community sighting integrity
+    const comm = allRows.find((r) => r.id === "community_user_1")!;
+    expect(comm.source).toBe("community");
+    expect(comm.verified).toBe(0);
+    expect(comm.notes).toBe("User submission");
+  });
+
   it("syncs on first request when DB is empty", async () => {
     const mockSightings = [
       { id: "s1", date: "2023-01-01T00:00:00", location: "Cardiff", species: "Passerine tick" },

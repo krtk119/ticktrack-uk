@@ -113,16 +113,11 @@ export async function syncFromUpstream(
   const { clean, report } = cleanSightings(rawSightings);
 
   // 4. Upsert into SQLite inside a single transaction
-  const upsertStmt = targetDb.prepare(`
+  const deleteElancoStmt = targetDb.prepare("DELETE FROM sightings WHERE source = 'elanco'");
+
+  const insertStmt = targetDb.prepare(`
     INSERT INTO sightings (id, date, city, species, latinName, source, verified, notes, imageUrl)
     VALUES (@id, @date, @city, @species, @latinName, 'elanco', 1, NULL, NULL)
-    ON CONFLICT(id) DO UPDATE SET
-      date = excluded.date,
-      city = excluded.city,
-      species = excluded.species,
-      latinName = excluded.latinName,
-      source = excluded.source,
-      verified = excluded.verified
   `);
 
   const setMetaStmt = targetDb.prepare(`
@@ -136,8 +131,12 @@ export async function syncFromUpstream(
   const nowIso = new Date().toISOString();
 
   const transaction = targetDb.transaction(() => {
+    // Delete existing upstream records so removed upstream records disappear
+    // Community rows are strictly preserved and never touched by sync
+    deleteElancoStmt.run();
+
     for (const record of clean) {
-      upsertStmt.run({
+      insertStmt.run({
         id: record.id,
         date: record.date,
         city: record.city,
