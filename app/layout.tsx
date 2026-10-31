@@ -4,9 +4,9 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 
 export const metadata: Metadata = {
-  title: "TickTrack UK — UK Tick Surveillance & Sightings",
+  title: "TickTrack UK — UK Tick Sightings",
   description:
-    "Independent UK tick surveillance application. Track, explore regional trends, and report sightings across 14 UK cities.",
+    "An independent project for exploring and reporting tick sightings across 14 UK cities.",
 };
 
 export default function RootLayout({

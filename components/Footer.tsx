@@ -6,7 +6,7 @@ export function Footer() {
           Independent project for the Elanco placement task. Sightings show where ticks were reported, not tick risk.
         </p>
         <p className="text-xs text-slate-500">
-          Data synchronized from public tick surveillance endpoints. Map tiles ©{" "}
+          Sighting data from the Elanco placement task API, plus community reports submitted here. Map tiles ©{" "}
           <a
             href="https://www.openstreetmap.org/copyright"
             target="_blank"

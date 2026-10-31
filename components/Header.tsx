@@ -32,7 +32,7 @@ export function Header() {
                 TickTrack <span className="text-emerald-700 font-extrabold">UK</span>
               </span>
               <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wider block -mt-1">
-                Surveillance
+                Tick sightings
               </span>
             </div>
           </Link>

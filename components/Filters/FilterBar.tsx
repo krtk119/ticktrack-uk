@@ -117,9 +117,9 @@ export function FilterBar({ filters, onChange, onReset, totalSightings }: Filter
             onChange={(e) => onChange({ source: e.target.value })}
             className="w-full text-xs font-medium bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:border-transparent transition-all cursor-pointer"
           >
-            <option value="all">All Sources (Verified + Community)</option>
-            <option value="elanco">Elanco Surveillance (Verified)</option>
-            <option value="community">Community Reports (Unverified)</option>
+            <option value="all">All sources</option>
+            <option value="elanco">Elanco dataset</option>
+            <option value="community">Community reports (unverified)</option>
           </select>
         </div>
       </div>
