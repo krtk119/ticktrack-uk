@@ -210,7 +210,7 @@ describe("cleanSightings Breakdown & Validation", () => {
       },
     ];
 
-    const { clean, report } = cleanSightings(raw, { now: fixedNow });
+    const { report } = cleanSightings(raw, { now: fixedNow });
 
     expect(report.total).toBe(2);
     expect(report.kept).toBe(0);
@@ -227,7 +227,7 @@ describe("cleanSightings Breakdown & Validation", () => {
       },
     ];
 
-    const { clean, report } = cleanSightings(raw, { now: fixedNow });
+    const { report } = cleanSightings(raw, { now: fixedNow });
 
     expect(report.total).toBe(1);
     expect(report.kept).toBe(0);
@@ -246,7 +246,7 @@ describe("cleanSightings Breakdown & Validation", () => {
       },
     ];
 
-    const { clean, report } = cleanSightings(raw, { now: fixedNow });
+    const { report } = cleanSightings(raw, { now: fixedNow });
 
     expect(report.unknownCity).toBe(1);
     expect(report.kept).toBe(0);
@@ -269,7 +269,7 @@ describe("cleanSightings Breakdown & Validation", () => {
       },
     ];
 
-    const { clean, report } = cleanSightings(raw, { now: fixedNow });
+    const { report } = cleanSightings(raw, { now: fixedNow });
 
     expect(report.unknownSpecies).toBe(1);
     expect(report.kept).toBe(0);
