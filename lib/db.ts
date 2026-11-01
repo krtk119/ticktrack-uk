@@ -12,13 +12,25 @@ export type Db = DatabaseSync;
 /** Named query parameters, e.g. { city: "Leeds" } for `@city`. */
 export type SqlParams = Record<string, SQLInputValue>;
 
+/** A problem with the machine's setup that the person running the app can fix, so its message is safe to show. */
+export class SetupError extends Error {}
+
 /**
  * Loaded at runtime with getBuiltinModule rather than a static import, so the bundler
  * never tries to resolve node:sqlite itself.
  */
 export function openDatabase(filename: string): Db {
-  const { DatabaseSync } = process.getBuiltinModule("node:sqlite");
-  return new DatabaseSync(filename);
+  // Older Node versions lack getBuiltinModule or node:sqlite. Fail with a clear message
+  // rather than an obscure stack trace, since this is the most likely setup problem.
+  const sqlite =
+    typeof process.getBuiltinModule === "function" ? process.getBuiltinModule("node:sqlite") : undefined;
+  if (!sqlite?.DatabaseSync) {
+    throw new SetupError(
+      `TickTrack UK needs Node.js 22.13 or newer for its built-in SQLite database (you have ${process.version}). ` +
+        "Please upgrade Node.js from https://nodejs.org and run the app again."
+    );
+  }
+  return new sqlite.DatabaseSync(filename);
 }
 
 /**

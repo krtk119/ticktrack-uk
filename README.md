@@ -60,6 +60,13 @@ The brief asks for a public repo with clear instructions on how to run it, and d
 - **The common free hosts wouldn't work as-is.** Platforms like Vercel run each request in a temporary environment where files written to disk don't last, so the SQLite database and uploaded photos would be lost. Deploying properly means moving to a hosted database and file storage, which I describe under [Limitations and what I'd improve](#limitations-and-what-id-improve).
 - **A reviewer gets the full app, not a demo.** Running it locally, you can submit reports, upload photos and run the tests yourself.
 
+### Troubleshooting
+
+- **"TickTrack UK needs Node.js 22.13 or newer"**: the database is built into Node.js, so older versions can't run the app. Check with `node -v` and upgrade from [nodejs.org](https://nodejs.org). If you use nvm, `nvm use` picks up the version in `.nvmrc`.
+- **"Upstream Elanco API is unavailable"** on first run: the app couldn't reach `dev-task.elancoapps.com` (no internet, or a firewall or proxy blocking it), and has no saved data yet. Once it has synced once, it keeps working offline from the saved copy.
+- **Map markers show but the map background is grey**: map tiles come from OpenStreetMap; a network that blocks it will hide the background but not the data.
+- **Port 3000 already in use**: Next.js will offer another port (such as 3001); use the address it prints.
+
 **If `npm install` warns that install scripts were blocked** (some npm versions do this), approve the image library and rebuild it:
 
 ```bash

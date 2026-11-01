@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { SyncServiceUnavailableError } from "./sync";
+import { SetupError } from "./db";
 
 export interface ApiErrorBody {
   error: {
@@ -36,8 +37,13 @@ export function handleRouteError(error: unknown): NextResponse<ApiErrorBody> {
     return jsonError(error.code, error.message, error.statusCode);
   }
 
-  // Generic fallback without leaking internal details or stack traces
-  const message =
-    error instanceof Error ? error.message : "An unexpected server error occurred";
-  return jsonError("INTERNAL_ERROR", message, 500);
+  if (error instanceof SetupError) {
+    console.error(`[setup] ${error.message}`);
+    return jsonError("SETUP_ERROR", error.message, 500);
+  }
+
+  // Anything else is unexpected: log the details on the server, but send the client a
+  // generic message so internal details (such as SQL errors) are never exposed.
+  console.error("[api] Unexpected error:", error);
+  return jsonError("INTERNAL_ERROR", "An unexpected server error occurred. Please try again.", 500);
 }
