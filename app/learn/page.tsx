@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Footprints, Shirt, SprayCan, Search, Stethoscope, Dog, Info, ExternalLink } from "lucide-react";
 import { SpeciesGuide } from "@/components/Learn/SpeciesGuide";
 import { SeasonalChart } from "@/components/Learn/SeasonalChart";
+import { IdentifyHelper } from "@/components/Learn/IdentifyHelper";
 
 export const metadata: Metadata = {
   title: "Learn about ticks – TickTrack UK",
@@ -26,6 +27,7 @@ const REMOVAL_STEPS = [
 const SOURCES = [
   { label: "NHS – Lyme disease (preventing and removing tick bites)", href: "https://www.nhs.uk/conditions/Lyme-disease/" },
   { label: "UKHSA – What are ticks and how can you avoid being bitten?", href: "https://ukhsa.blog.gov.uk/2026/06/30/what-are-ticks-and-how-can-you-avoid-being-bitten/" },
+  { label: "UKHSA – Tick species profiles", href: "https://www.gov.uk/guidance/tick-species-profiles" },
   { label: "GOV.UK – Tick recording scheme", href: "https://www.gov.uk/tick-recording-scheme" },
 ];
 
@@ -50,9 +52,13 @@ export default function LearnPage() {
       </header>
 
       <section aria-labelledby="species-heading" className="space-y-4">
-        <SectionHeading id="species-heading" title="Species in this dataset">
-          The five species recorded in the data, with what our sightings show about each one.
+        <SectionHeading id="species-heading" title="Identify a tick">
+          Where a tick was found is the best clue to which species it might be. Start here, then compare the species below.
         </SectionHeading>
+        <div id="identify" className="scroll-mt-24">
+          <IdentifyHelper />
+        </div>
+        <h3 className="text-lg font-bold text-slate-900 pt-2">The five species in this dataset</h3>
         <SpeciesGuide />
         <div className="flex gap-3 rounded-2xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-950">
           <Info className="w-5 h-5 shrink-0 text-sky-700" aria-hidden="true" />

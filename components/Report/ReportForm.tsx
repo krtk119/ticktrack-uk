@@ -292,7 +292,7 @@ export function ReportForm() {
           ))}
         </select>
         <p id="species-hint" className="mt-1 text-xs text-slate-500">
-          Not sure which one? The <Link href="/learn" className="underline text-emerald-800">species guide</Link> may help.
+          Not sure which one? The <Link href="/learn#identify" className="underline text-emerald-800">identification guide</Link> may help.
         </p>
         {errors.species && <p id="species-error" className="mt-1 text-xs text-red-700">{errors.species}</p>}
       </div>
