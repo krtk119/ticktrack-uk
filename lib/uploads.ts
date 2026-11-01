@@ -7,9 +7,12 @@ import sharp from "sharp";
  * Uploaded photos live outside public/: Next.js only serves files that existed in
  * public/ at build time, so anything uploaded to a production build would 404.
  * They are served instead by app/api/uploads/[name]/route.ts.
+ *
+ * The turbopackIgnore comments tell the bundler these are runtime paths, so it
+ * doesn't try to trace (and bundle) the whole project folder at build time.
  */
 export function getUploadDir(): string {
-  return process.env.UPLOAD_DIR || path.join(process.cwd(), "data", "uploads");
+  return process.env.UPLOAD_DIR || path.join(/*turbopackIgnore: true*/ process.cwd(), "data", "uploads");
 }
 
 const EXTENSIONS: Record<string, string> = {
@@ -40,7 +43,7 @@ export async function saveUploadedImage(buffer: Buffer, mimeType: string): Promi
   fs.mkdirSync(dir, { recursive: true });
 
   const filename = `${crypto.randomUUID()}.${ext}`;
-  await sharp(buffer).rotate().toFile(path.join(dir, filename));
+  await sharp(buffer).rotate().toFile(path.join(/*turbopackIgnore: true*/ dir, filename));
   return filename;
 }
 

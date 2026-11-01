@@ -15,7 +15,7 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ na
   }
 
   try {
-    const file = await fs.readFile(path.join(getUploadDir(), name));
+    const file = await fs.readFile(path.join(/*turbopackIgnore: true*/ getUploadDir(), name));
     const ext = name.split(".").pop() as string;
     return new NextResponse(new Uint8Array(file), {
       headers: {
