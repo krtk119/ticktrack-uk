@@ -5,7 +5,7 @@ export function Footer() {
         <p className="font-medium text-slate-300">
           Independent project for the Elanco placement task. Sightings show where ticks were reported, not tick risk.
         </p>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-slate-400">
           Sighting data from the Elanco placement task API, plus community reports submitted here. Map tiles ©{" "}
           <a
             href="https://www.openstreetmap.org/copyright"

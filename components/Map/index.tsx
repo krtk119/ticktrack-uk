@@ -15,7 +15,7 @@ function MapLoadingSkeleton() {
     >
       <div className="w-12 h-12 rounded-full border-4 border-emerald-600/20 border-t-emerald-600 animate-spin mb-4" />
       <p className="text-sm font-semibold text-slate-700">Loading map…</p>
-      <p className="text-xs text-slate-400 mt-1">Rendering OpenStreetMap tiles and regional coordinates</p>
+      <p className="text-xs text-slate-600 mt-1">Loading OpenStreetMap tiles</p>
     </div>
   );
 }

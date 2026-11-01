@@ -10,10 +10,10 @@ export function SpeciesLegend({ selectedSpecies, onSelectSpecies }: SpeciesLegen
   return (
     <div className="bg-white/95 backdrop-blur-sm border border-slate-200 rounded-xl p-3.5 shadow-sm space-y-2">
       <div className="flex items-center justify-between">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
-          Species Legend (Okabe-Ito)
+        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-600">
+          Species
         </h3>
-        <span className="text-[11px] text-slate-400">Accessible Shapes & Colors</span>
+        <span className="text-[11px] text-slate-600">Each species has its own colour and shape. Select one to filter.</span>
       </div>
 
       <div className="flex flex-wrap gap-2 pt-1">

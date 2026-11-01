@@ -323,15 +323,16 @@ export function ReportForm() {
       </div>
 
       <div>
-        <label htmlFor="image" className="block text-sm font-semibold text-slate-800 mb-1">
+        <p id="image-label" className="block text-sm font-semibold text-slate-800 mb-1">
           Photo <span className="font-normal text-slate-500">(optional)</span>
-        </label>
+        </p>
         <div className="flex flex-wrap items-center gap-4">
           <label
             htmlFor="image"
             className="inline-flex items-center gap-2 rounded-xl border border-dashed border-slate-400 bg-white hover:bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 cursor-pointer focus-within:ring-2 focus-within:ring-emerald-600"
           >
             <ImagePlus className="w-5 h-5 text-emerald-700" aria-hidden="true" />
+            <span className="sr-only">Photo (optional): </span>
             {image ? "Choose a different photo" : "Choose a photo"}
             <input
               ref={fileInputRef}
