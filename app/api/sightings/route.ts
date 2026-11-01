@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
-import path from "path";
-import fs from "fs";
-import sharp from "sharp";
 import { getDb, rowToSighting, type SightingRow } from "@/lib/db";
 import { UK_CITIES, normaliseCity } from "@/lib/cities";
 import { UK_SPECIES, normaliseSpecies, SPECIES_MAP, type UKSpecies } from "@/lib/species";
 import { ensureSynced } from "@/lib/sync";
 import { jsonError, handleRouteError } from "@/lib/errors";
+import { saveUploadedImage, uploadUrl } from "@/lib/uploads";
 
 export const dynamic = "force-dynamic";
 
@@ -121,7 +119,7 @@ export async function GET(request: NextRequest) {
 /**
  * POST /api/sightings
  * Accepts multipart/form-data: date, city, species, optional notes, optional image.
- * Strips EXIF metadata from images with sharp.
+ * Strips EXIF metadata (including GPS) from images with sharp; see lib/uploads.ts.
  * Includes a rule-based possibleDuplicate check (same city + species within 1 day).
  */
 export async function POST(request: NextRequest) {
@@ -212,35 +210,25 @@ export async function POST(request: NextRequest) {
         fieldErrors.image = ["Image size must not exceed 5 MB"];
       } else if (!ALLOWED_MIME_TYPES.has(imageFile.type)) {
         fieldErrors.image = ["Image must be a JPEG, PNG, or WebP format"];
-      } else {
-        try {
-          const buffer = Buffer.from(await imageFile.arrayBuffer());
-          let ext = "jpg";
-          if (imageFile.type === "image/png") ext = "png";
-          else if (imageFile.type === "image/webp") ext = "webp";
-
-          const filename = `${crypto.randomUUID()}.${ext}`;
-          const uploadsDir = path.join(process.cwd(), "public", "uploads");
-          if (!fs.existsSync(uploadsDir)) {
-            fs.mkdirSync(uploadsDir, { recursive: true });
-          }
-
-          const targetFilePath = path.join(uploadsDir, filename);
-
-          // Strip all EXIF / GPS metadata with sharp and re-orient correctly
-          await sharp(buffer).rotate().toFile(targetFilePath);
-
-          savedImageUrl = `/uploads/${filename}`;
-        } catch (imgErr) {
-          console.error("[sightings] Error processing image:", imgErr);
-          fieldErrors.image = ["Failed to process image file"];
-        }
       }
     }
 
     // Return field-level errors if validation failed
     if (Object.keys(fieldErrors).length > 0) {
       return jsonError("VALIDATION_ERROR", "One or more fields failed validation", 400, fieldErrors);
+    }
+
+    // Only save the photo once every other field is valid, so rejected reports leave no orphan files.
+    if (imageFile) {
+      try {
+        const buffer = Buffer.from(await imageFile.arrayBuffer());
+        savedImageUrl = uploadUrl(await saveUploadedImage(buffer, imageFile.type));
+      } catch (imgErr) {
+        console.error("[sightings] Error processing image:", imgErr);
+        return jsonError("VALIDATION_ERROR", "One or more fields failed validation", 400, {
+          image: ["The photo couldn't be processed. Try a different image."],
+        });
+      }
     }
 
     // 6. Rule-based duplicate check (same city + species within 1 day)
