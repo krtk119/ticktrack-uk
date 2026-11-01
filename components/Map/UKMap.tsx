@@ -3,6 +3,11 @@
 import { useEffect } from "react";
 import { MapContainer, TileLayer, CircleMarker, Tooltip, useMap } from "react-leaflet";
 import { getSpeciesTheme } from "@/lib/species-theme";
+import { CITY_COORDINATES } from "@/lib/cities";
+
+// Fit the map to the 14 cities rather than a fixed centre and zoom, so every city is
+// visible on any screen size (a fixed zoom cut off most of England on phones).
+const CITY_BOUNDS: [number, number][] = Object.values(CITY_COORDINATES).map((c) => [c.latitude, c.longitude]);
 
 export interface RegionData {
   city: string;
@@ -34,14 +39,14 @@ function MapViewController({ selectedCity, regions }: { selectedCity?: string | 
 }
 
 export default function UKMap({ regions, selectedCity, onSelectCity }: UKMapProps) {
-  // Center of the UK: [54.5, -2.5] with default zoom 6
-  const ukCenter: [number, number] = [54.5, -2.5];
+  // The map only ever renders in the browser (ssr: false), so window is always available here.
+  const compact = window.matchMedia("(max-width: 640px)").matches;
 
   return (
     <div className="relative w-full h-[540px] sm:h-[620px] rounded-2xl overflow-hidden border border-slate-200 shadow-sm bg-slate-100">
       <MapContainer
-        center={ukCenter}
-        zoom={6}
+        bounds={CITY_BOUNDS}
+        boundsOptions={{ padding: [30, 30] }}
         scrollWheelZoom={true}
         className="w-full h-full z-0"
         attributionControl={true}
@@ -59,10 +64,12 @@ export default function UKMap({ regions, selectedCity, onSelectCity }: UKMapProp
           const theme = getSpeciesTheme(region.mostCommonSpecies);
           const hasSightings = region.count > 0;
 
-          // Sizing calculation based on square-root scaling
-          const radius = hasSightings
+          // Square-root scaling so area (not radius) tracks the count. Markers are smaller
+          // on phones, where full-size circles overlapped across the Midlands.
+          const base = hasSightings
             ? Math.max(9, Math.min(32, Math.round(7 + Math.sqrt(region.count) * 2.3)))
             : 5;
+          const radius = compact ? Math.max(6, Math.round(base * 0.6)) : base;
 
           const markerColor = hasSightings ? theme.color : "#94A3B8";
 

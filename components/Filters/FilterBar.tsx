@@ -2,7 +2,8 @@
 
 import { UK_SPECIES } from "@/lib/species";
 import { SPECIES_THEMES } from "@/lib/species-theme";
-import { Filter, RotateCcw } from "lucide-react";
+import { useState } from "react";
+import { Filter, RotateCcw, ChevronDown } from "lucide-react";
 
 import type { MapFilters } from "@/lib/types";
 
@@ -16,16 +17,31 @@ interface FilterBarProps {
 }
 
 export function FilterBar({ filters, onChange, onReset, totalSightings }: FilterBarProps) {
-  const hasActiveFilters = Boolean(
-    filters.from || filters.to || filters.species || (filters.source && filters.source !== "all")
-  );
+  const activeCount = [filters.from, filters.to, filters.species, filters.source !== "all" ? filters.source : ""].filter(
+    Boolean
+  ).length;
+  const hasActiveFilters = activeCount > 0;
+  // On phones the four filters filled the whole first screen, pushing the map out of view,
+  // so they collapse behind a toggle there. On wider screens they're always visible.
+  const [openOnMobile, setOpenOnMobile] = useState(false);
 
   return (
     <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3">
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
+      <div className={`flex flex-wrap items-center justify-between gap-2 border-slate-100 ${openOnMobile ? "border-b pb-3" : "md:border-b md:pb-3"}`}>
         <div className="flex items-center gap-2 text-slate-800">
           <Filter className="w-4 h-4 text-emerald-700" aria-hidden="true" />
           <h2 className="text-sm font-bold uppercase tracking-wider text-slate-700">Filter Sightings</h2>
+          <button
+            type="button"
+            onClick={() => setOpenOnMobile((o) => !o)}
+            aria-expanded={openOnMobile}
+            aria-controls="filter-fields"
+            className="md:hidden inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 cursor-pointer"
+          >
+            {openOnMobile ? "Hide" : "Show"}
+            {activeCount > 0 && ` (${activeCount} active)`}
+            <ChevronDown className={`w-3.5 h-3.5 transition-transform ${openOnMobile ? "rotate-180" : ""}`} aria-hidden="true" />
+          </button>
         </div>
 
         <div className="flex items-center gap-3">
@@ -48,7 +64,7 @@ export function FilterBar({ filters, onChange, onReset, totalSightings }: Filter
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+      <div id="filter-fields" className={`${openOnMobile ? "grid" : "hidden"} md:grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5`}>
         {/* From Date */}
         <div>
           <label htmlFor="filter-from" className="block text-xs font-semibold text-slate-700 mb-1">
