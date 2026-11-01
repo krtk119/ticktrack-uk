@@ -21,14 +21,21 @@ const PAGE_SIZE = 50;
  */
 export function SightingsTable({ filters, onSelectCity }: SightingsTableProps) {
   const query = buildQuery({ ...filters });
-  const { data, error, isLoading, retry } = useJson<SightingsResponse>(`/api/sightings?${query}`);
   const [page, setPage] = useState({ query, index: 0 });
 
   // Changing filters sends you back to page 1 (derived, not set in an effect).
   const pageIndex = page.query === query ? page.index : 0;
-  const rows = data?.sightings ?? [];
-  const pageCount = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
-  const visible = rows.slice(pageIndex * PAGE_SIZE, (pageIndex + 1) * PAGE_SIZE);
+
+  // Paging happens on the server: only one page of rows is ever downloaded.
+  const { data: current, lastData, error, isLoading, retry } = useJson<SightingsResponse>(
+    `/api/sightings?${query}${query ? "&" : ""}limit=${PAGE_SIZE}&offset=${pageIndex * PAGE_SIZE}`
+  );
+  // Keep the previous page on screen while the next one loads, so the Next/Previous
+  // buttons don't vanish (and lose keyboard focus) mid-click.
+  const data = current ?? (isLoading ? lastData : null);
+  const visible = data?.sightings ?? [];
+  const total = data?.total ?? 0;
+  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   if (error) {
     return (
@@ -43,7 +50,7 @@ export function SightingsTable({ filters, onSelectCity }: SightingsTableProps) {
     );
   }
 
-  if (isLoading) {
+  if (!data) {
     return (
       <div role="status" className="bg-white border border-slate-200 rounded-2xl p-6 text-sm text-slate-600">
         Loading sightings…
@@ -51,7 +58,7 @@ export function SightingsTable({ filters, onSelectCity }: SightingsTableProps) {
     );
   }
 
-  if (rows.length === 0) {
+  if (total === 0) {
     return (
       <div className="bg-white border border-slate-200 rounded-2xl p-6 text-sm text-slate-600">
         No sightings match the current filters.
@@ -63,10 +70,10 @@ export function SightingsTable({ filters, onSelectCity }: SightingsTableProps) {
 
   return (
     <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-      <div className="overflow-x-auto">
+      <div className={`overflow-x-auto transition-opacity ${isLoading ? "opacity-60" : ""}`} aria-busy={isLoading}>
         <table className="w-full text-sm text-left">
           <caption className="sr-only">
-            Tick sightings matching the current filters, newest first. Showing {visible.length} of {rows.length}.
+            Tick sightings matching the current filters, newest first. Showing {visible.length} of {total}.
           </caption>
           <thead className="bg-slate-50 text-xs uppercase tracking-wider text-slate-600">
             <tr>
@@ -109,7 +116,7 @@ export function SightingsTable({ filters, onSelectCity }: SightingsTableProps) {
 
       <nav aria-label="Table pages" className="flex items-center justify-between gap-3 border-t border-slate-100 px-4 py-3 text-xs text-slate-600">
         <span>
-          {pluralise(rows.length, "sighting")} · page {pageIndex + 1} of {pageCount}
+          {pluralise(total, "sighting")} · page {pageIndex + 1} of {pageCount}
         </span>
         <div className="flex gap-2">
           <button

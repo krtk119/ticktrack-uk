@@ -13,6 +13,9 @@ export interface UseJsonResult<T> {
   data: T | null;
   error: string | null;
   isLoading: boolean;
+  /** The most recent successful result, even if it was for an earlier URL. Lets a view keep
+   * showing old rows while the next page loads, instead of flashing an empty state. */
+  lastData: T | null;
   retry: () => void;
 }
 
@@ -59,6 +62,7 @@ export function useJson<T>(url: string | null): UseJsonResult<T> {
     data: isCurrent ? state.data : null,
     error: isCurrent ? state.error : null,
     isLoading: key !== null && !isCurrent,
+    lastData: state.data,
     retry,
   };
 }

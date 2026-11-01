@@ -8,6 +8,7 @@ import { GET as getSightingById } from "@/app/api/sightings/[id]/route";
 import { GET as getRegions } from "@/app/api/stats/regions/route";
 import { GET as getTrends } from "@/app/api/stats/trends/route";
 import { GET as getSeasonal } from "@/app/api/stats/seasonal/route";
+import { GET as getSpecies } from "@/app/api/stats/species/route";
 
 describe("Phase 3: Route Handlers Endpoints", () => {
   let db: Database.Database;
@@ -151,6 +152,25 @@ describe("Phase 3: Route Handlers Endpoints", () => {
 
       expect(json.sightings.length).toBe(1);
       expect(json.sightings[0].id).toBe("s_3");
+    });
+
+    it("pages results with limit and offset, newest first, and reports the full total", async () => {
+      seedTestData();
+
+      const first = await (await getSightings(new NextRequest("http://localhost:3000/api/sightings?limit=2"))).json();
+      expect(first.total).toBe(4);
+      expect(first.limit).toBe(2);
+      expect(first.sightings.map((s: { id: string }) => s.id)).toEqual(["s_4", "s_3"]);
+
+      const second = await (
+        await getSightings(new NextRequest("http://localhost:3000/api/sightings?limit=2&offset=2"))
+      ).json();
+      expect(second.sightings.map((s: { id: string }) => s.id)).toEqual(["s_2", "s_1"]);
+
+      for (const bad of ["limit=0", "limit=501", "limit=abc", "offset=-1"]) {
+        const res = await getSightings(new NextRequest(`http://localhost:3000/api/sightings?${bad}`));
+        expect(res.status).toBe(400);
+      }
     });
 
     it("returns 503 SERVICE_UNAVAILABLE when DB is empty and upstream is down", async () => {
@@ -435,6 +455,28 @@ describe("Phase 3: Route Handlers Endpoints", () => {
       expect(json.error.code).toBe("INVALID_PARAMETER");
       expect(json.error.message).toContain("Unknown city 'Paris'");
       expect(json.error.message).toContain("Valid cities are:");
+    });
+  });
+
+  describe("GET /api/stats/species", () => {
+    it("summarises each species with count, top city and busiest month, honouring filters", async () => {
+      seedTestData();
+
+      const json = await (await getSpecies(new NextRequest("http://localhost:3000/api/stats/species"))).json();
+      expect(json.total).toBe(4);
+      expect(json.species).toHaveLength(5);
+      const marsh = json.species.find((s: { species: string }) => s.species === "Marsh tick");
+      expect(marsh).toMatchObject({ count: 2, topCity: "London", peakMonth: "May" });
+      const fox = json.species.find((s: { species: string }) => s.species === "Fox/badger tick");
+      expect(fox).toMatchObject({ count: 0, topCity: null, peakMonth: null });
+
+      const community = await (
+        await getSpecies(new NextRequest("http://localhost:3000/api/stats/species?source=community"))
+      ).json();
+      expect(community.total).toBe(2);
+
+      const bad = await getSpecies(new NextRequest("http://localhost:3000/api/stats/species?city=Paris"));
+      expect(bad.status).toBe(400);
     });
   });
 });

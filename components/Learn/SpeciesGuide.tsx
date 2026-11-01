@@ -1,13 +1,10 @@
 "use client";
 
-import { useMemo } from "react";
 import { useJson } from "@/lib/useJson";
 import { pluralise } from "@/lib/format";
 import { SPECIES_THEMES } from "@/lib/species-theme";
 import { UK_SPECIES, type UKSpecies } from "@/lib/species";
-import type { SightingsResponse } from "@/lib/types";
-
-const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+import type { SpeciesSummaryResponse } from "@/lib/types";
 
 // Deliberately short and general. These describe each species' usual hosts or habitat,
 // not risk, and avoid claims the dataset can't support.
@@ -19,33 +16,16 @@ const DESCRIPTIONS: Record<UKSpecies, string> = {
   "Fox/badger tick": "Associated with foxes and badgers, and can also be found on dogs.",
 };
 
-interface SpeciesStats {
-  total: number;
-  topCity: string | null;
-  peakMonth: string | null;
-}
+const MONTH_FULL: Record<string, string> = {
+  Jan: "January", Feb: "February", Mar: "March", Apr: "April", May: "May", Jun: "June",
+  Jul: "July", Aug: "August", Sep: "September", Oct: "October", Nov: "November", Dec: "December",
+};
 
 /** One card per species: a short description plus what our data says about it. */
 export function SpeciesGuide() {
-  const { data, error, isLoading } = useJson<SightingsResponse>("/api/sightings");
-
-  const stats = useMemo(() => {
-    const result = new Map<string, SpeciesStats>();
-    const bySpecies = new Map<string, { cities: Map<string, number>; months: number[]; total: number }>();
-    for (const s of data?.sightings ?? []) {
-      const entry = bySpecies.get(s.species) ?? { cities: new Map(), months: Array(12).fill(0), total: 0 };
-      entry.total++;
-      entry.cities.set(s.city, (entry.cities.get(s.city) ?? 0) + 1);
-      entry.months[new Date(s.date).getUTCMonth()]++;
-      bySpecies.set(s.species, entry);
-    }
-    for (const [species, e] of bySpecies) {
-      const topCity = [...e.cities].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
-      const peakIndex = e.months.indexOf(Math.max(...e.months));
-      result.set(species, { total: e.total, topCity, peakMonth: e.total ? MONTHS[peakIndex] : null });
-    }
-    return result;
-  }, [data]);
+  // Summary numbers are calculated on the server, so this page never downloads every sighting.
+  const { data, error, isLoading } = useJson<SpeciesSummaryResponse>("/api/stats/species");
+  const stats = new Map((data?.species ?? []).map((s) => [s.species, s]));
 
   return (
     <div className="space-y-4">
@@ -77,7 +57,7 @@ export function SpeciesGuide() {
               <dl className="grid grid-cols-3 gap-2 border-t border-slate-100 pt-3 text-xs">
                 <div>
                   <dt className="text-slate-500">Sightings</dt>
-                  <dd className="font-semibold text-slate-900">{isLoading ? "…" : s ? s.total.toLocaleString("en-GB") : "0"}</dd>
+                  <dd className="font-semibold text-slate-900">{isLoading ? "…" : (s?.count ?? 0).toLocaleString("en-GB")}</dd>
                 </div>
                 <div>
                   <dt className="text-slate-500">Most reported in</dt>
@@ -85,7 +65,7 @@ export function SpeciesGuide() {
                 </div>
                 <div>
                   <dt className="text-slate-500">Busiest month</dt>
-                  <dd className="font-semibold text-slate-900">{isLoading ? "…" : s?.peakMonth ?? "–"}</dd>
+                  <dd className="font-semibold text-slate-900">{isLoading ? "…" : s?.peakMonth ? MONTH_FULL[s.peakMonth] : "–"}</dd>
                 </div>
               </dl>
             </li>

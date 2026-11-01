@@ -12,11 +12,20 @@ export const dynamic = "force-dynamic";
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5 MB
 const ALLOWED_MIME_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+const DEFAULT_LIMIT = 100;
+const MAX_LIMIT = 500;
+
+/** Parses an optional whole-number query param. Returns null if present but not a whole number. */
+function parseIntParam(raw: string | null, fallback: number): number | null {
+  if (raw === null || raw.trim() === "") return fallback;
+  return /^\d+$/.test(raw.trim()) ? Number(raw.trim()) : null;
+}
 
 /**
  * GET /api/sightings
- * Query filters: from, to, city, species, source
- * Returns Elanco and community sightings, labelled with source and verified.
+ * Query filters: from, to, city, species, source. Paging: limit (default 100, max 500), offset.
+ * Returns one page of Elanco and community sightings, newest first, labelled with source and
+ * verified, plus `total`: how many sightings match the filters across all pages.
  */
 export async function GET(request: NextRequest) {
   try {
@@ -58,44 +67,56 @@ export async function GET(request: NextRequest) {
       return jsonError("INVALID_PARAMETER", "source must be 'elanco' or 'community'");
     }
 
-    // Build parameterized query
-    let sql = `
-      SELECT id, date, city, species, latinName, source, verified, notes, imageUrl
-      FROM sightings
-      WHERE 1=1
-    `;
+    // Paging, so responses stay small however large the dataset grows.
+    const limit = parseIntParam(searchParams.get("limit"), DEFAULT_LIMIT);
+    const offset = parseIntParam(searchParams.get("offset"), 0);
+    if (limit === null || limit < 1 || limit > MAX_LIMIT) {
+      return jsonError("INVALID_PARAMETER", `limit must be a whole number from 1 to ${MAX_LIMIT}`);
+    }
+    if (offset === null || offset < 0) {
+      return jsonError("INVALID_PARAMETER", "offset must be a whole number of 0 or more");
+    }
+
+    // Build the parameterised WHERE clause once, and use it for both the count and the page.
+    let where = "WHERE 1=1";
     const params: Record<string, unknown> = {};
 
     if (fromParam) {
-      const fromDate = fromParam.length === 10 ? `${fromParam}T00:00:00.000Z` : fromParam;
-      sql += " AND date >= @fromDate";
-      params.fromDate = fromDate;
+      where += " AND date >= @fromDate";
+      params.fromDate = fromParam.length === 10 ? `${fromParam}T00:00:00.000Z` : fromParam;
     }
 
     if (toParam) {
-      const toDate = toParam.length === 10 ? `${toParam}T23:59:59.999Z` : toParam;
-      sql += " AND date <= @toDate";
-      params.toDate = toDate;
+      where += " AND date <= @toDate";
+      params.toDate = toParam.length === 10 ? `${toParam}T23:59:59.999Z` : toParam;
     }
 
     if (filterCity) {
-      sql += " AND city = @filterCity";
+      where += " AND city = @filterCity";
       params.filterCity = filterCity;
     }
 
     if (filterSpecies) {
-      sql += " AND species = @filterSpecies";
+      where += " AND species = @filterSpecies";
       params.filterSpecies = filterSpecies;
     }
 
     if (filterSource) {
-      sql += " AND source = @filterSource";
+      where += " AND source = @filterSource";
       params.filterSource = filterSource;
     }
 
-    sql += " ORDER BY date DESC";
+    const { total } = db.prepare(`SELECT COUNT(*) AS total FROM sightings ${where}`).get(params) as { total: number };
 
-    const rows = db.prepare(sql).all(params) as SightingRow[];
+    // id as a tie-breaker keeps the order stable, so a record never appears on two pages.
+    const rows = db
+      .prepare(
+        `SELECT id, date, city, species, latinName, source, verified, notes, imageUrl
+         FROM sightings ${where}
+         ORDER BY date DESC, id ASC
+         LIMIT @limit OFFSET @offset`
+      )
+      .all({ ...params, limit, offset }) as SightingRow[];
     const sightings = rows.map(rowToSighting);
 
     const headers = new Headers();
@@ -106,8 +127,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       {
         sightings,
+        total,
+        limit,
+        offset,
         stale: syncStatus.stale,
-        total: sightings.length,
       },
       { headers }
     );

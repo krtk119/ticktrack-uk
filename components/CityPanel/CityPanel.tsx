@@ -6,8 +6,7 @@ import { X, Navigation, Share2, AlertCircle, RefreshCw } from "lucide-react";
 import { useJson } from "@/lib/useJson";
 import { buildQuery, formatDate, formatPeriod, pluralise } from "@/lib/format";
 import { getSpeciesTheme } from "@/lib/species-theme";
-import { UK_SPECIES } from "@/lib/species";
-import type { MapFilters, SightingsResponse, TrendsResponse } from "@/lib/types";
+import type { MapFilters, SightingsResponse, SpeciesSummaryResponse, TrendsResponse } from "@/lib/types";
 import { SourceBadge } from "@/components/SourceBadge";
 
 interface CityPanelProps {
@@ -25,7 +24,9 @@ export function CityPanel({ city, filters, onClose }: CityPanelProps) {
 
   // The panel uses exactly the same filters as the map, so its numbers always match the marker.
   const query = buildQuery({ ...filters, city });
-  const sightings = useJson<SightingsResponse>(`/api/sightings?${query}`);
+  // Only the 20 most recent records are downloaded; counts come from aggregate endpoints.
+  const sightings = useJson<SightingsResponse>(`/api/sightings?${query}&limit=${RECENT_LIMIT}`);
+  const speciesStats = useJson<SpeciesSummaryResponse>(`/api/stats/species?${query}`);
   const trends = useJson<TrendsResponse>(`/api/stats/trends?interval=month&${query}`);
 
   // Move focus to the panel when a city is opened, so keyboard and screen-reader users land on it.
@@ -41,15 +42,15 @@ export function CityPanel({ city, filters, onClose }: CityPanelProps) {
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  const speciesBreakdown = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const s of sightings.data?.sightings ?? []) {
-      counts.set(s.species, (counts.get(s.species) ?? 0) + 1);
-    }
-    return UK_SPECIES.map((name) => ({ name, count: counts.get(name) ?? 0 }))
-      .filter((s) => s.count > 0)
-      .sort((a, b) => b.count - a.count);
-  }, [sightings.data]);
+  const speciesBreakdown = useMemo(
+    () =>
+      (speciesStats.data?.species ?? [])
+        // The summary covers every species, so apply the map's species filter here.
+        .filter((s) => s.count > 0 && (!filters.species || s.species === filters.species))
+        .map((s) => ({ name: s.species, count: s.count }))
+        .sort((a, b) => b.count - a.count),
+    [speciesStats.data, filters.species]
+  );
 
   // ~0.5 sightings per city per month, so a yearly view is the readable default;
   // the monthly view is still available for detail.

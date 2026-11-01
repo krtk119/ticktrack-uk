@@ -6,7 +6,25 @@ export type { Sighting } from "./db";
 import type { Sighting } from "./db";
 
 export interface SightingsResponse {
+  /** One page of results, newest first. */
   sightings: Sighting[];
+  /** Number of sightings matching the filters across all pages. */
+  total: number;
+  limit: number;
+  offset: number;
+  stale: boolean;
+}
+
+export interface SpeciesSummary {
+  species: string;
+  latinName: string;
+  count: number;
+  topCity: string | null;
+  peakMonth: string | null;
+}
+
+export interface SpeciesSummaryResponse {
+  species: SpeciesSummary[];
   total: number;
   stale: boolean;
 }
