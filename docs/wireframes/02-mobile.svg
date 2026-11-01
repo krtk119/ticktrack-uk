@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="860" height="760" viewBox="0 0 860 760" role="img" aria-label="Wireframe of the map page on a phone">
+<rect width="860" height="760" fill="#ffffff"/>
+<text x="24" y="34" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="bold" fill="#111827" text-anchor="start">Wireframe 2 · Map page on a phone</text>
+<rect x="24" y="52" width="300" height="680" rx="24" fill="#ffffff" stroke="#6b7280" stroke-width="1.5"/>
+<text x="174" y="748" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="bold" fill="#374151" text-anchor="middle">Filters folded, smaller markers</text>
+<rect x="36" y="68" width="276" height="40" rx="6" fill="#ffffff" stroke="#9ca3af" stroke-width="1.5"/>
+<rect x="44" y="76" width="24" height="24" rx="4" fill="#d1d5db" stroke="#9ca3af" stroke-width="1.5"/>
+<text x="76" y="94" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="bold" fill="#374151" text-anchor="start">TickTrack UK</text>
+<text x="296" y="95" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="normal" fill="#374151" text-anchor="end">☰</text>
+<g transform="translate(0,0)">
+<text x="36" y="136" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="bold" fill="#111827" text-anchor="start">UK Tick Sightings</text>
+<rect x="36" y="146" width="240" height="8" rx="4" fill="#d1d5db"/>
+<rect x="36" y="166" width="160" height="30" rx="6" fill="#ffffff" stroke="#9ca3af" stroke-width="1.5"/>
+<text x="44" y="186" font-family="Arial, Helvetica, sans-serif" font-size="11" font-weight="normal" fill="#374151" text-anchor="start">[Map view] [List view]</text>
+<rect x="36" y="208" width="252" height="44" rx="8" fill="#ffffff" stroke="#9ca3af" stroke-width="1.5"/>
+<text x="48" y="235" font-family="Arial, Helvetica, sans-serif" font-size="11" font-weight="bold" fill="#374151" text-anchor="start">FILTER SIGHTINGS</text>
+<rect x="200" y="220" width="76" height="22" rx="6" fill="#f9fafb" stroke="#9ca3af" stroke-width="1.5"/>
+<text x="238" y="235" font-family="Arial, Helvetica, sans-serif" font-size="11" font-weight="normal" fill="#374151" text-anchor="middle">Show ▾</text>
+<rect x="36" y="264" width="252" height="330" rx="8" fill="#eef2f7" stroke="#9ca3af" stroke-width="1.5"/>
+<path d="M130 290 L160 285 L180 320 L170 370 L195 420 L215 480 L200 540 L150 560 L120 540 L135 500 L115 450 L140 400 L120 340 Z" fill="#ffffff" stroke="#9ca3af" stroke-width="1.5"/>
+<circle cx="135" cy="320" r="9" fill="#e5e7eb" stroke="#6b7280" stroke-width="1.5"/>
+<circle cx="158" cy="316" r="9" fill="#e5e7eb" stroke="#6b7280" stroke-width="1.5"/>
+<circle cx="170" cy="375" r="8" fill="#e5e7eb" stroke="#6b7280" stroke-width="1.5"/>
+<circle cx="140" cy="430" r="9" fill="#e5e7eb" stroke="#6b7280" stroke-width="1.5"/>
+<circle cx="165" cy="433" r="10" fill="#e5e7eb" stroke="#6b7280" stroke-width="1.5"/>
+<circle cx="180" cy="445" r="8" fill="#e5e7eb" stroke="#6b7280" stroke-width="1.5"/>
+<circle cx="160" cy="470" r="9" fill="#e5e7eb" stroke="#6b7280" stroke-width="1.5"/>
+<circle cx="188" cy="475" r="8" fill="#e5e7eb" stroke="#6b7280" stroke-width="1.5"/>
+<circle cx="138" cy="510" r="9" fill="#e5e7eb" stroke="#6b7280" stroke-width="1.5"/>
+<circle cx="175" cy="530" r="9" fill="#e5e7eb" stroke="#6b7280" stroke-width="1.5"/>
+<circle cx="200" cy="515" r="10" fill="#e5e7eb" stroke="#6b7280" stroke-width="1.5"/>
+<circle cx="185" cy="410" r="8" fill="#e5e7eb" stroke="#6b7280" stroke-width="1.5"/>
+<rect x="36" y="606" width="252" height="50" rx="8" fill="#ffffff" stroke="#9ca3af" stroke-width="1.5"/>
+<text x="48" y="626" font-family="Arial, Helvetica, sans-serif" font-size="11" font-weight="bold" fill="#374151" text-anchor="start">SPECIES legend</text>
+<rect x="48" y="636" width="200" height="8" rx="4" fill="#d1d5db"/>
+</g>
+<rect x="380" y="52" width="300" height="680" rx="24" fill="#ffffff" stroke="#6b7280" stroke-width="1.5"/>
+<text x="530" y="748" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="bold" fill="#374151" text-anchor="middle">Panel appears below the map</text>
+<rect x="392" y="68" width="276" height="40" rx="6" fill="#ffffff" stroke="#9ca3af" stroke-width="1.5"/>
+<rect x="400" y="76" width="24" height="24" rx="4" fill="#d1d5db" stroke="#9ca3af" stroke-width="1.5"/>
+<text x="432" y="94" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="bold" fill="#374151" text-anchor="start">TickTrack UK</text>
+<text x="652" y="95" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="normal" fill="#374151" text-anchor="end">☰</text>
+<g transform="translate(356,0)">
+<rect x="36" y="120" width="252" height="64" rx="8" fill="#ffffff" stroke="#9ca3af" stroke-width="1.5"/>
+<text x="48" y="140" font-family="Arial, Helvetica, sans-serif" font-size="11" font-weight="bold" fill="#374151" text-anchor="start">FILTER SIGHTINGS</text>
+<text x="276" y="140" font-family="Arial, Helvetica, sans-serif" font-size="11" font-weight="normal" fill="#374151" text-anchor="end">Hide ▴</text>
+<text x="48" y="168" font-family="Arial, Helvetica, sans-serif" font-size="10" font-weight="normal" fill="#6b7280" text-anchor="start">(date, species, source fields stack)</text>
+<rect x="36" y="196" width="252" height="520" rx="8" fill="#ffffff" stroke="#9ca3af" stroke-width="1.5"/>
+<text x="48" y="220" font-family="Arial, Helvetica, sans-serif" font-size="10" font-weight="bold" fill="#6b7280" text-anchor="start">CITY DETAILS</text>
+<text x="48" y="242" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="bold" fill="#111827" text-anchor="start">Newcastle</text>
+<text x="48" y="260" font-family="Arial, Helvetica, sans-serif" font-size="11" font-weight="normal" fill="#374151" text-anchor="start">57 sightings</text>
+<rect x="48" y="272" width="110" height="26" rx="6" fill="#d1d5db" stroke="#9ca3af" stroke-width="1.5"/>
+<text x="103" y="290" font-family="Arial, Helvetica, sans-serif" font-size="11" font-weight="normal" fill="#374151" text-anchor="middle">Directions</text>
+<rect x="166" y="272" width="110" height="26" rx="6" fill="#ffffff" stroke="#9ca3af" stroke-width="1.5"/>
+<text x="221" y="290" font-family="Arial, Helvetica, sans-serif" font-size="11" font-weight="normal" fill="#374151" text-anchor="middle">Share</text>
+<text x="48" y="322" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="bold" fill="#374151" text-anchor="start">By species</text>
+<rect x="48" y="332" width="210" height="6" rx="4" fill="#9ca3af"/>
+<rect x="48" y="348" width="170" height="6" rx="4" fill="#9ca3af"/>
+<rect x="48" y="364" width="150" height="6" rx="4" fill="#9ca3af"/>
+<rect x="48" y="380" width="150" height="6" rx="4" fill="#9ca3af"/>
+<rect x="48" y="396" width="90" height="6" rx="4" fill="#9ca3af"/>
+<text x="48" y="432" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="bold" fill="#374151" text-anchor="start">Activity over time</text>
+<rect x="52" y="500" width="12" height="30" fill="#d1d5db"/>
+<rect x="69" y="480" width="12" height="50" fill="#d1d5db"/>
+<rect x="86" y="510" width="12" height="20" fill="#d1d5db"/>
+<rect x="103" y="515" width="12" height="15" fill="#d1d5db"/>
+<rect x="120" y="510" width="12" height="20" fill="#d1d5db"/>
+<rect x="137" y="505" width="12" height="25" fill="#d1d5db"/>
+<rect x="154" y="515" width="12" height="15" fill="#d1d5db"/>
+<rect x="171" y="515" width="12" height="15" fill="#d1d5db"/>
+<rect x="188" y="505" width="12" height="25" fill="#d1d5db"/>
+<rect x="205" y="510" width="12" height="20" fill="#d1d5db"/>
+<rect x="222" y="505" width="12" height="25" fill="#d1d5db"/>
+<rect x="239" y="520" width="12" height="10" fill="#d1d5db"/>
+<rect x="256" y="515" width="12" height="15" fill="#d1d5db"/>
+<text x="48" y="560" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="bold" fill="#374151" text-anchor="start">Most recent 20</text>
+<rect x="48" y="574" width="180" height="8" rx="4" fill="#d1d5db"/>
+<rect x="48" y="588" width="110" height="8" rx="4" fill="#e5e7eb"/>
+<rect x="48" y="610" width="180" height="8" rx="4" fill="#d1d5db"/>
+<rect x="48" y="624" width="110" height="8" rx="4" fill="#e5e7eb"/>
+<rect x="48" y="646" width="180" height="8" rx="4" fill="#d1d5db"/>
+<rect x="48" y="660" width="110" height="8" rx="4" fill="#e5e7eb"/>
+</g>
+<text x="700" y="120" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="bold" fill="#111827" text-anchor="start">Design notes</text>
+<text x="700" y="146" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="normal" fill="#374151" text-anchor="start">Filters fold behind</text>
+<text x="700" y="166" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="normal" fill="#374151" text-anchor="start">Show/Hide so the map</text>
+<text x="700" y="186" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="normal" fill="#374151" text-anchor="start">is visible on load.</text>
+<text x="700" y="206" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="normal" fill="#374151" text-anchor="start"></text>
+<text x="700" y="226" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="normal" fill="#374151" text-anchor="start">Markers shrink 40%</text>
+<text x="700" y="246" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="normal" fill="#374151" text-anchor="start">so Midlands cities</text>
+<text x="700" y="266" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="normal" fill="#374151" text-anchor="start">don't overlap.</text>
+<text x="700" y="286" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="normal" fill="#374151" text-anchor="start"></text>
+<text x="700" y="306" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="normal" fill="#374151" text-anchor="start">Tapping a city shows</text>
+<text x="700" y="326" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="normal" fill="#374151" text-anchor="start">its panel below the</text>
+<text x="700" y="346" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="normal" fill="#374151" text-anchor="start">map, not over it.</text>
+</svg>
