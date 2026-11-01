@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
-import { getDb, rowToSighting, type SightingRow } from "@/lib/db";
+import { getDb, rowToSighting, type SightingRow, type SqlParams } from "@/lib/db";
 import { UK_CITIES, normaliseCity } from "@/lib/cities";
 import { UK_SPECIES, normaliseSpecies, SPECIES_MAP, type UKSpecies } from "@/lib/species";
 import { ensureSynced } from "@/lib/sync";
@@ -79,7 +79,7 @@ export async function GET(request: NextRequest) {
 
     // Build the parameterised WHERE clause once, and use it for both the count and the page.
     let where = "WHERE 1=1";
-    const params: Record<string, unknown> = {};
+    const params: SqlParams = {};
 
     if (fromParam) {
       where += " AND date >= @fromDate";
@@ -116,7 +116,7 @@ export async function GET(request: NextRequest) {
          ORDER BY date DESC, id ASC
          LIMIT @limit OFFSET @offset`
       )
-      .all({ ...params, limit, offset }) as SightingRow[];
+      .all({ ...params, limit, offset }) as unknown as SightingRow[];
     const sightings = rows.map(rowToSighting);
 
     const headers = new Headers();

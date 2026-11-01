@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import Database from "better-sqlite3";
 import { UK_CITIES, CITY_COORDINATES, normaliseCity } from "@/lib/cities";
-import { initSchema, rowToSighting, type SightingRow } from "@/lib/db";
+import { initSchema, rowToSighting, type SightingRow, type Db, openDatabase } from "@/lib/db";
 import {
   syncFromUpstream,
   ensureSynced,
@@ -32,10 +31,10 @@ describe("Phase 2: Cities & Coordinates", () => {
 });
 
 describe("Phase 2: SQLite Schema & Storage", () => {
-  let db: Database.Database;
+  let db: Db;
 
   beforeEach(() => {
-    db = new Database(":memory:");
+    db = openDatabase(":memory:");
     initSchema(db);
   });
 
@@ -52,7 +51,7 @@ describe("Phase 2: SQLite Schema & Storage", () => {
     insert.run("elanco_1", "2023-01-01T00:00:00.000Z", "London", "Marsh tick", "Ixodes apronophorus", "elanco", 1, null, null);
     insert.run("comm_1", "2023-02-01T12:00:00.000Z", "Bristol", "Tree-hole tick", "Ixodes arboricola", "community", 0, "Found near park", "/uploads/pic.jpg");
 
-    const rows = db.prepare("SELECT * FROM sightings ORDER BY date ASC").all() as SightingRow[];
+    const rows = db.prepare("SELECT * FROM sightings ORDER BY date ASC").all() as unknown as SightingRow[];
     expect(rows.length).toBe(2);
 
     const s1 = rowToSighting(rows[0]);
@@ -109,7 +108,7 @@ describe("Phase 2: SQLite Schema & Storage", () => {
       latinName: "Ixodes apronophorus",
     });
 
-    const rows = db.prepare("SELECT * FROM sightings WHERE id = 'rec_sync_1'").all() as SightingRow[];
+    const rows = db.prepare("SELECT * FROM sightings WHERE id = 'rec_sync_1'").all() as unknown as SightingRow[];
     expect(rows.length).toBe(1);
     expect(rows[0].city).toBe("Manchester");
     expect(rows[0].date).toBe("2022-01-02T00:00:00.000Z");
@@ -152,10 +151,10 @@ describe("Phase 2: fetchWithRetry", () => {
 });
 
 describe("Phase 2: Sync and Cache Lifecycle", () => {
-  let db: Database.Database;
+  let db: Db;
 
   beforeEach(() => {
-    db = new Database(":memory:");
+    db = openDatabase(":memory:");
     initSchema(db);
     vi.restoreAllMocks();
   });
@@ -249,7 +248,7 @@ describe("Phase 2: Sync and Cache Lifecycle", () => {
     await syncFromUpstream(db, "https://mock-api.local");
 
     // 3. Verify: elanco_stale is deleted, elanco_fresh_1 is added, community_user_1 is preserved
-    const allRows = db.prepare("SELECT * FROM sightings ORDER BY id ASC").all() as SightingRow[];
+    const allRows = db.prepare("SELECT * FROM sightings ORDER BY id ASC").all() as unknown as SightingRow[];
     expect(allRows.length).toBe(2);
 
     const ids = allRows.map((r) => r.id);

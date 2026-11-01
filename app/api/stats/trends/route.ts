@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDb } from "@/lib/db";
+import { getDb, type SqlParams } from "@/lib/db";
 import { UK_CITIES, normaliseCity } from "@/lib/cities";
 import { UK_SPECIES, normaliseSpecies } from "@/lib/species";
 import { ensureSynced } from "@/lib/sync";
@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
       FROM sightings
       WHERE 1=1
     `;
-    const params: Record<string, unknown> = {};
+    const params: SqlParams = {};
 
     let fromIso: string | null = null;
     if (fromParam) {
@@ -114,7 +114,7 @@ export async function GET(request: NextRequest) {
         FROM sightings
         WHERE 1=1
       `;
-      const boundParams: Record<string, unknown> = {};
+      const boundParams: SqlParams = {};
 
       if (filterCity) {
         boundSql += " AND city = @city";

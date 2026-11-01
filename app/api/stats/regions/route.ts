@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDb } from "@/lib/db";
+import { getDb, type SqlParams } from "@/lib/db";
 import { UK_CITIES, CITY_COORDINATES, type UKCity } from "@/lib/cities";
 import { UK_SPECIES, normaliseSpecies } from "@/lib/species";
 import { ensureSynced } from "@/lib/sync";
@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
       FROM sightings
       WHERE 1=1
     `;
-    const params: Record<string, unknown> = {};
+    const params: SqlParams = {};
 
     if (fromParam) {
       const fromDate = fromParam.length === 10 ? `${fromParam}T00:00:00.000Z` : fromParam;

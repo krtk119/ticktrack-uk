@@ -32,7 +32,7 @@ It takes the sighting data from Elanco's task API, cleans and stores it, serves 
 
 ## Running it
 
-You need **Node.js 20.9 or newer** (developed and tested on Node 24) and an internet connection, because the app downloads the sighting data from the Elanco API the first time it runs. No database server, API key or account is needed.
+You need **Node.js 22.13 or newer** (developed and tested on Node 24) and an internet connection, because the app downloads the sighting data from the Elanco API the first time it runs. No database server, API key or account is needed.
 
 ```bash
 git clone https://github.com/krtk119/ticktrack-uk.git
@@ -60,11 +60,11 @@ The brief asks for a public repo with clear instructions on how to run it, and d
 - **The common free hosts wouldn't work as-is.** Platforms like Vercel run each request in a temporary environment where files written to disk don't last, so the SQLite database and uploaded photos would be lost. Deploying properly means moving to a hosted database and file storage, which I describe under [Limitations and what I'd improve](#limitations-and-what-id-improve).
 - **A reviewer gets the full app, not a demo.** Running it locally, you can submit reports, upload photos and run the tests yourself.
 
-**If `npm install` warns that install scripts were blocked** (newer npm versions do this), approve the two packages that need them and rebuild:
+**If `npm install` warns that install scripts were blocked** (some npm versions do this), approve the image library and rebuild it:
 
 ```bash
-npm approve-scripts better-sqlite3 sharp
-npm rebuild better-sqlite3 sharp
+npm approve-scripts sharp
+npm rebuild sharp
 ```
 
 ---
@@ -193,7 +193,7 @@ Unknown cities or species return 400 with a list of valid values, rather than an
 | Choice | Why |
 |---|---|
 | **Next.js (App Router), React, TypeScript, Tailwind CSS** | One project for both frontend and backend, strict typing across both, and it matches the web stack Elanco described in its placement presentation |
-| **SQLite** (better-sqlite3) | Real persistence with zero setup: a reviewer runs `npm install` and nothing else. The schema is plain SQL, so moving to MySQL or Postgres for a multi-user deployment is a small change |
+| **SQLite, built into Node.js** (`node:sqlite`) | Real persistence with zero setup: nothing to install, download or compile. I first used the better-sqlite3 package, but a fresh-clone test showed it needed C++ build tools to install on Windows, so I switched to Node's built-in driver. The schema is plain SQL, so moving to MySQL or Postgres for a multi-user deployment is a small change |
 | **Zod** | Validates everything coming in, from the Elanco API, query strings and the report form, at runtime, not just at compile time |
 | **Leaflet with OpenStreetMap** | Free, open and needs no API key, so the app runs for anyone without signing up for a maps service |
 | **Recharts** | Simple, declarative charts that fit React |

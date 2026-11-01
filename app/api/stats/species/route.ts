@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDb } from "@/lib/db";
+import { getDb, type SqlParams } from "@/lib/db";
 import { UK_CITIES, normaliseCity } from "@/lib/cities";
 import { UK_SPECIES, SPECIES_MAP } from "@/lib/species";
 import { ensureSynced } from "@/lib/sync";
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
     }
 
     let where = "WHERE 1=1";
-    const params: Record<string, unknown> = {};
+    const params: SqlParams = {};
     if (fromParam) {
       where += " AND date >= @fromDate";
       params.fromDate = fromParam.length === 10 ? `${fromParam}T00:00:00.000Z` : fromParam;

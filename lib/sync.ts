@@ -1,5 +1,4 @@
-import Database from "better-sqlite3";
-import { getDb } from "./db";
+import { getDb, transaction, type Db } from "./db";
 import { cleanSightings, type CleanSightingsResult } from "./cleaning";
 
 export const ELANCO_API_BASE_URL =
@@ -79,7 +78,7 @@ export async function fetchWithRetry<T>(
  * Synchronizes sightings from the upstream Elanco API into the database.
  */
 export async function syncFromUpstream(
-  db?: Database.Database,
+  db?: Db,
   baseUrl = ELANCO_API_BASE_URL
 ): Promise<{ report: CleanSightingsResult["report"]; totalUpserted: number }> {
   const targetDb = db || getDb();
@@ -130,7 +129,7 @@ export async function syncFromUpstream(
 
   const nowIso = new Date().toISOString();
 
-  const transaction = targetDb.transaction(() => {
+  transaction(targetDb, () => {
     // Delete existing upstream records so removed upstream records disappear
     // Community rows are strictly preserved and never touched by sync
     deleteElancoStmt.run();
@@ -152,8 +151,6 @@ export async function syncFromUpstream(
     }
   });
 
-  transaction();
-
   return { report, totalUpserted: clean.length };
 }
 
@@ -166,7 +163,7 @@ let inFlightSync: Promise<SyncResult> | null = null;
  * - If upstream API fails: serves stale data if available; throws 503 if no data exists.
  */
 export async function ensureSynced(
-  db?: Database.Database,
+  db?: Db,
   baseUrl = ELANCO_API_BASE_URL
 ): Promise<SyncResult> {
   const targetDb = db || getDb();

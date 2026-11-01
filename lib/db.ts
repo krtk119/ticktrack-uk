@@ -1,6 +1,40 @@
-import Database from "better-sqlite3";
+import type { DatabaseSync, SQLInputValue } from "node:sqlite";
 import fs from "fs";
 import path from "path";
+
+/**
+ * The database is Node's built-in SQLite (node:sqlite, Node 22.13+), so there is no
+ * native package to download or compile. An earlier version used better-sqlite3, which
+ * failed to install on Windows machines without C++ build tools.
+ */
+export type Db = DatabaseSync;
+
+/** Named query parameters, e.g. { city: "Leeds" } for `@city`. */
+export type SqlParams = Record<string, SQLInputValue>;
+
+/**
+ * Loaded at runtime with getBuiltinModule rather than a static import, so the bundler
+ * never tries to resolve node:sqlite itself.
+ */
+export function openDatabase(filename: string): Db {
+  const { DatabaseSync } = process.getBuiltinModule("node:sqlite");
+  return new DatabaseSync(filename);
+}
+
+/**
+ * Runs fn inside a transaction: all of its writes are saved together, or none are.
+ */
+export function transaction<T>(db: Db, fn: () => T): T {
+  db.exec("BEGIN");
+  try {
+    const result = fn();
+    db.exec("COMMIT");
+    return result;
+  } catch (err) {
+    db.exec("ROLLBACK");
+    throw err;
+  }
+}
 
 export interface SightingRow {
   id: string;
@@ -41,15 +75,15 @@ export function rowToSighting(row: SightingRow): Sighting {
   };
 }
 
-let dbInstance: Database.Database | null = null;
+let dbInstance: Db | null = null;
 
 /**
  * Initializes and migrates the SQLite database schema.
  */
-export function initSchema(db: Database.Database): void {
+export function initSchema(db: Db): void {
   // Use WAL mode for improved concurrent read/write performance
-  db.pragma("journal_mode = WAL");
-  db.pragma("foreign_keys = ON");
+  db.exec("PRAGMA journal_mode = WAL");
+  db.exec("PRAGMA foreign_keys = ON");
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS sightings (
@@ -81,7 +115,7 @@ export function initSchema(db: Database.Database): void {
 /**
  * Sets the active database instance (primarily for test isolation).
  */
-export function setDb(db: Database.Database | null): void {
+export function setDb(db: Db | null): void {
   if (dbInstance && dbInstance !== db) {
     dbInstance.close();
   }
@@ -92,12 +126,12 @@ export function setDb(db: Database.Database | null): void {
  * Returns the singleton SQLite database instance.
  * Automatically uses in-memory SQLite in test environments to prevent touching data/ticks.db.
  */
-export function getDb(customPath?: string): Database.Database {
+export function getDb(customPath?: string): Db {
   if (customPath) {
     if (dbInstance) {
       dbInstance.close();
     }
-    dbInstance = new Database(customPath);
+    dbInstance = openDatabase(customPath);
     initSchema(dbInstance);
     return dbInstance;
   }
@@ -115,7 +149,7 @@ export function getDb(customPath?: string): Database.Database {
       }
     }
 
-    dbInstance = new Database(dbPath);
+    dbInstance = openDatabase(dbPath);
     initSchema(dbInstance);
   }
 

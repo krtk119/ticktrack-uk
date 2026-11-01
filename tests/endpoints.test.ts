@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import Database from "better-sqlite3";
 import { NextRequest } from "next/server";
-import { getDb, initSchema, closeDb } from "@/lib/db";
+import { getDb, initSchema, closeDb, type Db } from "@/lib/db";
 import { GET as getHealth } from "@/app/api/health/route";
 import { GET as getSightings, POST as postSightings } from "@/app/api/sightings/route";
 import { GET as getSightingById } from "@/app/api/sightings/[id]/route";
@@ -11,7 +10,7 @@ import { GET as getSeasonal } from "@/app/api/stats/seasonal/route";
 import { GET as getSpecies } from "@/app/api/stats/species/route";
 
 describe("Phase 3: Route Handlers Endpoints", () => {
-  let db: Database.Database;
+  let db: Db;
 
   beforeEach(() => {
     closeDb();

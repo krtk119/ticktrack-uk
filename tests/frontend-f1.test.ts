@@ -1,9 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import Database from "better-sqlite3";
 import { NextRequest } from "next/server";
 import { UK_SPECIES } from "@/lib/species";
 import { SPECIES_THEMES, getSpeciesTheme } from "@/lib/species-theme";
-import { getDb, initSchema, closeDb } from "@/lib/db";
+import { getDb, initSchema, closeDb, type Db } from "@/lib/db";
 import { GET as getRegions } from "@/app/api/stats/regions/route";
 
 describe("Phase F1: Species Palette & Accessibility", () => {
@@ -38,7 +37,7 @@ describe("Phase F1: Species Palette & Accessibility", () => {
 });
 
 describe("Phase F1: Regional Stats with Dominant Species", () => {
-  let db: Database.Database;
+  let db: Db;
 
   beforeEach(() => {
     closeDb();

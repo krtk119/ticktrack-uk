@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDb } from "@/lib/db";
+import { getDb, type SqlParams } from "@/lib/db";
 import { UK_CITIES, normaliseCity } from "@/lib/cities";
 import { ensureSynced } from "@/lib/sync";
 import { jsonError, handleRouteError } from "@/lib/errors";
@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
       FROM sightings
       WHERE 1=1
     `;
-    const params: Record<string, unknown> = {};
+    const params: SqlParams = {};
 
     if (filterCity) {
       sql += " AND city = @filterCity";
