@@ -5,7 +5,7 @@ A full-stack web app for exploring and reporting tick sightings across 14 UK cit
 It takes the sighting data from Elanco's task API, cleans and stores it, serves it through its own API with filtering and aggregate statistics, and presents it as an interactive map, city details, educational content and a form for reporting new sightings.
 
 **Author:** Kartik · [github.com/krtk119](https://github.com/krtk119)
-**Walkthrough video:** _link to be added_
+**Walkthrough video:** [youtu.be/bg5jPRwg020](https://youtu.be/bg5jPRwg020)
 
 ---
 
